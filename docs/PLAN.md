@@ -38,7 +38,7 @@ A **website (PWA) and backend on a private server you own**, plus one small help
 ## 4. Integrity rules (assume the player may lie on a bad day)
 1. Sensors outrank the player's word. Self-reported data is the lowest tier.
 2. Append-only log with server timestamps. Corrections are visible "adjustments" that cost XP.
-3. Quests need evidence (new row in a tracked CSV plus a job-site visit, commits or files in a prep folder, active time in the right app/site, Mac awake for "Deploy"). No evidence = "Unverified": tiny XP, doesn't win the day or unlock game minutes.
+3. Quests need evidence (new row in a tracked CSV plus a job-site visit, commits or files in a prep folder, active time in the right app/site, Mac awake for "Kickoff"). No evidence = "Unverified": tiny XP, doesn't win the day or unlock game minutes.
 4. Manual routine timers are cross-checked against sensors. A "Lunch" timer while the Mac shows coding is flagged and not credited.
 5. Unaccounted time (no sensor or timer explains it) counts as Waste by default.
 6. Honest limit: a determined cheater can fool any tracker. The aim is to make lying harder than doing the task. A proof-screenshot path gives partial credit for work sensors missed.
