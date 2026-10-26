@@ -1,0 +1,18 @@
+# Where the Mac sync agent looks for evidence. Copy to sources.local.yml and edit. Fake paths.
+folders:
+  - id: work_folder
+    path: "/Users/you/work-folder"
+    watch_git: true
+  - id: prep_folder
+    path: "/Users/you/work-folder/prep"
+csv:
+  applications_csv: "/Users/you/work-folder/applications/applications.csv"
+  targets_csv: "/Users/you/work-folder/targets/companies.csv"
+ignore:               # never read, sync or hash these
+  - ".env"
+  - "*.key"
+  - "*.pem"
+  - "id_*"
+ereader:
+  mount_path: "/Volumes/KOBOeReader"
+  db_relative_path: ".kobo/KoboReader.sqlite"

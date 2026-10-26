@@ -1,0 +1,23 @@
+# Personal data and secrets: never commit
+private/
+.env
+.env.*
+!.env.example
+config/*.local.*
+data/
+*.db
+*.sqlite
+*.key
+*.pem
+backups/
+
+# Tooling
+node_modules/
+dist/
+build/
+.DS_Store
+.idea/
+.vscode/
+*.log
+.gradle/
+local.properties

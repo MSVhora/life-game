@@ -1,0 +1,35 @@
+# Attack templates. Copy to quests.local.yml and edit. Fake examples.
+templates:
+  - id: deploy
+    title: "Deploy: sit at the desk, open the laptop, open the job board"
+    minutes: 2
+    xp: 10
+    evidence:
+      - type: mac_active          # ActivityWatch shows the Mac awake and active
+        min_minutes: 2
+  - id: log-application
+    title: "Log 1 application"
+    minutes: 15
+    xp: 40
+    evidence:
+      - type: csv_new_row
+        source: applications_csv   # defined in sources.local.yml
+      - type: site_visit
+        domains: ["example-jobs.com"]
+  - id: add-target-company
+    title: "Add 1 company to the targets list"
+    minutes: 10
+    xp: 20
+    evidence:
+      - type: csv_new_row
+        source: targets_csv
+  - id: study-block
+    title: "One 25-minute study block"
+    minutes: 25
+    xp: 30
+    evidence:
+      - type: folder_change
+        source: prep_folder
+      - type: active_time
+        categories: [Productive]
+        min_minutes: 20

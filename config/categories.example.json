@@ -1,0 +1,12 @@
+{
+  "_comment": "First matching rule wins. Copy to categories.local.json and edit. Fake examples.",
+  "rules": [
+    { "match": { "app": "Code" }, "category": "Productive" },
+    { "match": { "domain": "github.com" }, "category": "Productive" },
+    { "match": { "domain": "example-jobs.com" }, "category": "Productive" },
+    { "match": { "domain": "youtube.com" }, "category": "Waste" },
+    { "match": { "app": "Example Mobile Game" }, "category": "Waste", "counts_as": "gaming" },
+    { "match": { "app": "Example Novel Reader" }, "category": "Waste" }
+  ],
+  "default": "Unaccounted"
+}

@@ -1,0 +1,170 @@
+# Architecture
+
+## 1. System context
+```mermaid
+flowchart LR
+  subgraph Phone["Android phone"]
+    APP["Companion app (Kotlin)\nusage stats, unlock/wake,\nnotifications, quick tile"]
+    PWA1["PWA (game UI + routine buttons)"]
+  end
+  subgraph Mac["Mac"]
+    AW["ActivityWatch\napps + AFK + browser ext"]
+    AGENT["Sync agent (launchd)"]
+    JS["work folders\n(git, CSV, prep/)"]
+    PWA2["Browser (game UI)"]
+  end
+  KOBO["Kobo e-reader\n(KoboReader.sqlite via USB)"]
+  subgraph Srv["Your private server"]
+    API["Game API + Web UI"]
+    DB[("Database")]
+    ST["Solidtime"]
+    BK["Backup job"]
+  end
+  GD["Google Drive\n(encrypted backups)"]
+  APP -- "HTTPS + token (batched, offline queue)" --> API
+  PWA1 --> API
+  PWA2 --> API
+  AW --> AGENT
+  JS --> AGENT
+  KOBO -. "when plugged in" .-> AGENT
+  AGENT -- "HTTPS + token" --> API
+  ST -- "API (read time entries)" --> API
+  API --> DB
+  BK --> DB
+  BK --> GD
+  API -- "push notifications" --> APP
+```
+
+## 2. Data flow (sensor to score)
+```mermaid
+flowchart LR
+  E["Raw events\n(app, site, screen, files, git, solidtime, kobo)"] --> N["Normalize + dedupe\n(immutable, server timestamps)"]
+  N --> R["Rules engine\napp/site -> Productive | Neutral | Waste"]
+  M["Manual timers\nwake, wash, bath, lunch, dinner, sleep, kobo"] --> X["Cross-check\nvs sensors"]
+  R --> TB["Time blocks"]
+  X --> TB
+  TB --> U["Unaccounted gaps -> Waste"]
+  EV["Evidence verifier\n(CSV rows, commits, URLs, active time)"] --> W["War engine\nquests, attacks, deadline"]
+  TB --> W
+  W --> G["Game state\nXP, streak, rank, reputation,\ngaming budget, money meter"]
+  G --> UI["PWA + scoreboard"]
+  G --> NO["Reminders (6h/2h/30m), budget alerts"]
+```
+
+## 3. Server components
+```mermaid
+flowchart TB
+  subgraph Server
+    AUTH["Auth (login + device tokens)"]
+    ING["Ingest API\n(/events, /timers, idempotent)"]
+    RUL["Rules engine\n(categories.json, hot-reload)"]
+    WAR["War scheduler\n(deal quests, deadlines, win/lose)"]
+    VER["Evidence verifier"]
+    ECO["Economy\nXP, budget, reputation, loot"]
+    SOL["Solidtime connector\n(poll + cap tracking)"]
+    NOTI["Notifier (web push / FCM)"]
+    REP["Reports (daily, weekly)"]
+    BAK["Backup job (dump -> encrypt -> Drive)"]
+  end
+  DB[("Database")]
+  ING --> RUL --> DB
+  WAR --> DB
+  VER --> WAR
+  ECO --> DB
+  SOL --> DB
+  NOTI --- WAR
+  REP --> DB
+  BAK --> DB
+  AUTH --- ING
+```
+
+## 4. Data model
+```mermaid
+erDiagram
+  DEVICE ||--o{ EVENT : sends
+  EVENT }o--|| CATEGORY_RULE : "classified by"
+  EVENT ||--o{ TIME_BLOCK : "rolls up to"
+  WAR ||--|{ ATTACK : contains
+  ATTACK ||--o{ EVIDENCE : "proven by"
+  QUEST_TEMPLATE ||--o{ ATTACK : generates
+  WAR ||--|| BUDGET_DAY : earns
+  PLAYER ||--o{ WAR : plays
+  PLAYER ||--o{ XP_LEDGER : has
+  PLAYER ||--o{ ADJUSTMENT : "corrections (cost XP)"
+  CLIENT ||--o{ FREELANCE_ENTRY : bills
+  EVENT {
+    string source
+    string kind
+    json payload
+    datetime ts
+  }
+  TIME_BLOCK {
+    datetime start
+    datetime end
+    string category
+    string verified
+  }
+  ATTACK {
+    string title
+    string status
+    int xp
+    int minutes_earned
+  }
+  EVIDENCE {
+    string type
+    string ref
+    bool verified
+  }
+```
+
+## 5. Daily war lifecycle
+```mermaid
+sequenceDiagram
+  participant S as War scheduler
+  participant P as You (phone/Mac)
+  participant V as Evidence verifier
+  participant E as Economy
+  S->>P: War starts, 2 attacks dealt (from your work-folder files)
+  S->>P: Reminders at 6h, 2h, 30m left
+  P->>V: Activity (CSV row, commit, URL, active time)
+  V->>S: Attack verified (or Unverified, small XP)
+  S->>E: Attacks done before deadline?
+  alt Both attacks verified
+    E->>P: WIN: streak+1, XP, gaming minutes unlocked, reputation up
+  else Missed
+    E->>P: LOSS: streak reset, rank down, budget halved, scoreboard red
+  end
+```
+
+## 6. Sync with offline catch-up
+```mermaid
+sequenceDiagram
+  participant D as Device (Mac agent / Android app)
+  participant Q as Local queue/checkpoint
+  participant API as Server
+  D->>Q: Store events + last checkpoint
+  loop every ~1 min (Mac) / WorkManager (Android)
+    D->>API: POST batch (idempotency keys)
+    alt online
+      API-->>D: ack up to checkpoint
+    else offline / Mac asleep
+      D->>Q: keep queue, retry later
+    end
+  end
+```
+
+## 7. How data is collected per device
+| Device | Method | Notes |
+|---|---|---|
+| Mac | ActivityWatch REST (`/api/0/buckets`, `/api/0/buckets/<id>/events`) read by a `launchd` agent, checkpoint per bucket | Needs macOS Accessibility (and maybe Screen Recording) permission for window titles |
+| Mac browser | ActivityWatch web watcher extension | Chrome-family and Firefox supported; Safari needs checking |
+| Android | Own Kotlin app: `UsageStatsManager` + screen/unlock broadcasts, uploaded by WorkManager | One-time "Usage access" grant; battery-optimisation exemption recommended |
+| Kobo | Agent reads `/Volumes/KOBOeReader/.kobo/KoboReader.sqlite` when mounted | Table layout unverified, to confirm on your device |
+| Solidtime | Server polls its API | Token set by you in server config |
+| work-folder | Agent watches `git log` and the CSV/prep files, ignores `.env` | Mac only, so evidence arrives when the Mac is on |
+
+## 8. Security and privacy
+- HTTPS only; single user login plus per-device revocable tokens.
+- All data on your server; backups encrypted before upload to Google Drive (key kept off Drive).
+- No secrets in the sync agent; file watcher ignores `.env`, keys and credential files.
+- Browser tracking stores domain and page title by default; full URLs are optional (see Doubts file).

@@ -1,0 +1,11 @@
+# Freelance clients (optional). Copy to clients.local.yml and edit. Fake examples.
+currency: INR
+clients:
+  - name: "Client A"
+    hourly_rate: 1000
+    monthly_cap: 20000      # money cap; hours cap = monthly_cap / hourly_rate
+    timetracker_project: "client-a"
+  - name: "Client B"
+    hourly_rate: 1000
+    monthly_cap: 50000
+    timetracker_project: "client-b"
