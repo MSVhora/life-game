@@ -7,9 +7,11 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 
 ---
 
-## Phase 0: Foundations
+## Phase 0: Foundations  (status: built, see checklist below)
 **Goal:** a running, secure, deployable skeleton on your server.
 **Done when:** you can log in at your domain, a health endpoint answers, and a backup lands in Google Drive.
+
+**Status (2026-10-26):** P0-1 to P0-7 are implemented and tested locally (18 automated tests, Compose stack smoke-tested, backup/restore round-trip verified with a stand-in for rclone). Still to do on your side: set DNS, install the nginx vhost and certificate, configure rclone with a real Drive remote and do one real backup. See [DEPLOY.md](DEPLOY.md).
 
 | ID | Task | Acceptance criteria | Depends | Size |
 |---|---|---|---|---|
