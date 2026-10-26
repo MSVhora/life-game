@@ -19,27 +19,27 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 | P0-4 | Deploy to your server (Docker Compose, HTTPS on your domain) | Reachable over HTTPS; restarts on reboot | P0-2 | M |
 | P0-5 | Encrypted nightly backup to Google Drive + restore test | Restore into a fresh DB succeeds | P0-4 | M |
 | P0-7 | Public-repo hygiene: config loader (`*.local.*` over `*.example.*`), pre-commit secret/personal-data scan, CI check | Commit containing `.env`, `*.local.*` or token-like strings is blocked | P0-1 | M |
-| P0-6 | Core schema: events, time_blocks, wars, attacks, evidence, budget, xp_ledger, adjustments | Matches ER diagram | P0-2 | M |
+| P0-6 | Core schema: events, time_blocks, days, tasks, evidence, budget, xp_ledger, adjustments | Matches ER diagram | P0-2 | M |
 
 ## Phase 1: MVP game (manual only, usable on day 1)
 **Goal:** the deadline loop works before any automation exists.
-**Done when:** you play a full war end to end from your phone.
+**Done when:** you play a full day end to end from your phone.
 
 | ID | Task | Acceptance criteria | Depends | Size |
 |---|---|---|---|---|
-| P1-1 | War engine: daily war, fixed deadline, countdown, win/lose | Expired war resolves correctly in a shortened-window test | P0-6 | L |
-| P1-2 | Attack model, "Deploy" attack, quest templates | Attacks dealt daily from templates | P1-1 | M |
+| P1-1 | Day engine: daily cycle, fixed deadline, countdown, win/lose | Expired day resolves correctly in a shortened-window test | P0-6 | L |
+| P1-2 | Task model, "Kickoff" task, quest templates | Tasks dealt daily from templates | P1-1 | M |
 | P1-3 | Gaming budget (earn minutes, daily cap, over-budget state) | Budget changes on win/loss as specified | P1-1 | M |
-| P1-4 | XP, level, streak, rank/trophies | Ledger totals match events | P1-1 | M |
+| P1-4 | XP, level, streak, rank | Ledger totals match events | P1-1 | M |
 | P1-5 | Manual routine timers (wake, wash, bath, lunch, dinner, sleep, out, kobo) | Start/stop saves a Neutral/Leisure block | P0-6 | M |
-| P1-6 | PWA UI: war screen, countdown, timeline, timers; installable on Android | Installs to home screen; tolerates offline | P1-1, P1-5 | L |
+| P1-6 | PWA UI: day screen, countdown, timeline, timers; installable on Android | Installs to home screen; tolerates offline | P1-1, P1-5 | L |
 | P1-7 | Web push reminders (6h / 2h / 30m) | Notification arrives at each mark | P1-6 | M |
-| P1-8 | Virtual clan v1 (NPC messages, reputation meter) | Messages change with war results | P1-1 | M |
-| P1-9 | Seed your attacks, wake goal, budget numbers in the gitignored config files | Config reviewed by you | P1-2 | S |
+| P1-8 | Virtual crew v1 (NPC messages, reputation meter) | Messages change with day results | P1-1 | M |
+| P1-9 | Seed your tasks, wake goal, budget numbers in the gitignored config files | Config reviewed by you | P1-2 | S |
 
 ## Phase 2: Mac automation
 **Goal:** Mac time and work-folder work are tracked with no input from you.
-**Done when:** a day of Mac use shows as correctly tagged blocks, and a new CSV row verifies an attack.
+**Done when:** a day of Mac use shows as correctly tagged blocks, and a new CSV row verifies an task.
 
 | ID | Task | Acceptance criteria | Depends | Size |
 |---|---|---|---|---|
@@ -48,8 +48,8 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 | P2-3 | Mac sync agent (launchd, reads `:5600`, offline catch-up) | After 10 min offline, events appear on reconnect | P2-2 | L |
 | P2-4 | Rules engine + `categories.json` (app/site to Productive/Neutral/Waste) | Rule edits apply to past and new events | P2-2 | M |
 | P2-5 | Time blocks + Unaccounted-as-Waste logic | Daily productive % matches a hand check | P2-4 | M |
-| P2-6 | work-folder watcher (git commits, CSV rows, `prep/` files; ignores `.env`) | New `applications.csv` row verifies the apply attack | P2-3 | L |
-| P2-7 | Evidence verifier v1 | Attack flips to Verified only with valid evidence | P2-6 | M |
+| P2-6 | work-folder watcher (git commits, CSV rows, `prep/` files; ignores `.env`) | New `applications.csv` row verifies the apply task | P2-3 | L |
+| P2-7 | Evidence verifier v1 | Task flips to Verified only with valid evidence | P2-6 | M |
 | P2-8 | Solidtime connector + money meter (per-client rate and caps from `clients.local.yml`) | Hours and ₹ match Solidtime for a test week | P0-4 | M |
 
 ## Phase 3: Android app
@@ -62,13 +62,13 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 | P3-2 | Usage stats collection (`UsageStatsManager`, per-app foreground time) | Totals within a few % of Digital Wellbeing | P3-1 | L |
 | P3-3 | Screen on/off and unlock events to wake-time detection | First unlock after sleep recorded as wake | P3-1 | M |
 | P3-4 | Upload via WorkManager with offline queue and retry | No loss or duplicates in airplane-mode test | P3-2, P2-2 | M |
-| P3-5 | Notifications: war countdown (ongoing), budget warnings | Updates without opening the app | P3-1 | M |
+| P3-5 | Notifications: day countdown (ongoing), budget warnings | Updates without opening the app | P3-1 | M |
 | P3-6 | Quick tile/widget for routine timers | One tap starts/stops a timer | P1-5 | M |
 | P3-7 | Game-budget nudges (alert at limit; lock overlay optional later) | Alert fires at budget limit | P3-2, P1-3 | M |
 
 ## Phase 4: Integrity and pressure
 **Goal:** lying is harder than doing the task, and image pressure is live.
-**Done when:** a faked timer is flagged and a lost war turns the scoreboard red.
+**Done when:** a faked timer is flagged and a missed day turns the scoreboard red.
 
 | ID | Task | Acceptance criteria | Depends | Size |
 |---|---|---|---|---|
@@ -84,9 +84,9 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 
 | ID | Task | Acceptance criteria | Depends | Size |
 |---|---|---|---|---|
-| P5-1 | Boss fights with phases (ladder to interviews) | Boss HP reflects verified attacks | P1-2 | L |
+| P5-1 | Big-goal phases (ladder to interviews) | Goal progress reflects verified tasks | P1-2 | L |
 | P5-2 | Loot shop (rewards you define) | Unlock by level; redeemed state | P1-4 | M |
-| P5-3 | Difficulty ramp (start with 1 tiny attack; wake goal tightens) | Ramp configurable | P1-1 | M |
+| P5-3 | Difficulty ramp (start with 1 tiny task; wake goal tightens) | Ramp configurable | P1-1 | M |
 | P5-4 | Daily and weekly reports (productive %, wake times, applications, money) | Weekly summary generated | P2-5 | M |
 | P5-5 | Boredom menu | Triggers on waste-app time | P3-2 | S |
 | P5-6 | Optional LinkedIn-ready weekly summary (copy/paste only, never auto-post) | Text generated for you to paste | P5-4 | S |

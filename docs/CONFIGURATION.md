@@ -4,8 +4,8 @@ The repo is public. **Personal data never goes in tracked files.** Each config h
 
 | Real file (gitignored) | Example (committed) | Holds |
 |---|---|---|
-| `config/player.local.yml` | `config/player.example.yml` | war end time, gaming cap, wake goal and ramp, pressure level, timezone |
-| `config/quests.local.yml` | `config/quests.example.yml` | attack templates, XP, minutes earned, evidence rules |
+| `config/player.local.yml` | `config/player.example.yml` | day end time, gaming cap, wake goal and ramp, pressure level, timezone |
+| `config/quests.local.yml` | `config/quests.example.yml` | task templates, XP, minutes earned, evidence rules |
 | `config/clients.local.yml` | `config/clients.example.yml` | freelance clients, hourly rate, monthly caps |
 | `config/categories.local.json` | `config/categories.example.json` | app/site to Productive/Neutral/Waste rules |
 | `config/sources.local.yml` | `config/sources.example.yml` | watched folders, CSV paths, e-reader mount path |

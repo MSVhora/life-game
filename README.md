@@ -1,6 +1,6 @@
 # Life Game
 
-An open-source, deadline-driven productivity game for one player. A daily "war" gives you a 24-hour clock, a few tiny attacks, and consequences. Sensors track your time, so you don't have to report it honestly. Game time is earned and capped.
+An open-source, deadline-driven productivity game for one player. A daily 24-hour window gives you a few small tasks and consequences. Sensors track your time, so you don't have to report it honestly. Game time is earned and capped.
 
 Status: **planning only, no code yet.**
 

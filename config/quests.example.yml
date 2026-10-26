@@ -1,7 +1,7 @@
-# Attack templates. Copy to quests.local.yml and edit. Fake examples.
+# Task templates. Copy to quests.local.yml and edit. Fake examples.
 templates:
-  - id: deploy
-    title: "Deploy: sit at the desk, open the laptop, open the job board"
+  - id: kickoff
+    title: "Kickoff: sit at the desk, open the laptop, open the job board"
     minutes: 2
     xp: 10
     evidence:

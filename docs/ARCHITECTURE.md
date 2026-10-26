@@ -44,7 +44,7 @@ flowchart LR
   R --> TB["Time blocks"]
   X --> TB
   TB --> U["Unaccounted gaps -> Waste"]
-  EV["Evidence verifier\n(CSV rows, commits, URLs, active time)"] --> W["War engine\nquests, attacks, deadline"]
+  EV["Evidence verifier\n(CSV rows, commits, URLs, active time)"] --> W["Day engine\nquests, tasks, deadline"]
   TB --> W
   W --> G["Game state\nXP, streak, rank, reputation,\ngaming budget, money meter"]
   G --> UI["PWA + scoreboard"]
@@ -58,7 +58,7 @@ flowchart TB
     AUTH["Auth (login + device tokens)"]
     ING["Ingest API\n(/events, /timers, idempotent)"]
     RUL["Rules engine\n(categories.json, hot-reload)"]
-    WAR["War scheduler\n(deal quests, deadlines, win/lose)"]
+    DAY["Day scheduler\n(deal quests, deadlines, win/lose)"]
     VER["Evidence verifier"]
     ECO["Economy\nXP, budget, reputation, loot"]
     SOL["Solidtime connector\n(poll + cap tracking)"]
@@ -68,11 +68,11 @@ flowchart TB
   end
   DB[("Database")]
   ING --> RUL --> DB
-  WAR --> DB
-  VER --> WAR
+  DAY --> DB
+  VER --> DAY
   ECO --> DB
   SOL --> DB
-  NOTI --- WAR
+  NOTI --- DAY
   REP --> DB
   BAK --> DB
   AUTH --- ING
@@ -84,11 +84,11 @@ erDiagram
   DEVICE ||--o{ EVENT : sends
   EVENT }o--|| CATEGORY_RULE : "classified by"
   EVENT ||--o{ TIME_BLOCK : "rolls up to"
-  WAR ||--|{ ATTACK : contains
-  ATTACK ||--o{ EVIDENCE : "proven by"
-  QUEST_TEMPLATE ||--o{ ATTACK : generates
-  WAR ||--|| BUDGET_DAY : earns
-  PLAYER ||--o{ WAR : plays
+  DAY ||--|{ TASK : contains
+  TASK ||--o{ EVIDENCE : "proven by"
+  QUEST_TEMPLATE ||--o{ TASK : generates
+  DAY ||--|| BUDGET_DAY : earns
+  PLAYER ||--o{ DAY : plays
   PLAYER ||--o{ XP_LEDGER : has
   PLAYER ||--o{ ADJUSTMENT : "corrections (cost XP)"
   CLIENT ||--o{ FREELANCE_ENTRY : bills
@@ -104,7 +104,7 @@ erDiagram
     string category
     string verified
   }
-  ATTACK {
+  TASK {
     string title
     string status
     int xp
@@ -117,19 +117,19 @@ erDiagram
   }
 ```
 
-## 5. Daily war lifecycle
+## 5. Daily cycle lifecycle
 ```mermaid
 sequenceDiagram
-  participant S as War scheduler
+  participant S as Day scheduler
   participant P as You (phone/Mac)
   participant V as Evidence verifier
   participant E as Economy
-  S->>P: War starts, 2 attacks dealt (from your work-folder files)
+  S->>P: Day starts, 2 tasks dealt (from your work-folder files)
   S->>P: Reminders at 6h, 2h, 30m left
   P->>V: Activity (CSV row, commit, URL, active time)
-  V->>S: Attack verified (or Unverified, small XP)
-  S->>E: Attacks done before deadline?
-  alt Both attacks verified
+  V->>S: Task verified (or Unverified, small XP)
+  S->>E: Tasks done before deadline?
+  alt Both tasks verified
     E->>P: WIN: streak+1, XP, gaming minutes unlocked, reputation up
   else Missed
     E->>P: LOSS: streak reset, rank down, budget halved, scoreboard red

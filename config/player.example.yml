@@ -1,12 +1,12 @@
 # Copy to player.local.yml (gitignored) and edit. Values below are fake examples.
 timezone: Asia/Kolkata
-war:
-  ends_at: "23:00"          # local time each war ends
-  attacks_required: 2
+day:
+  ends_at: "23:00"          # local time each day ends
+  tasks_required: 2
   grace_days_per_week: 1
 gaming:
   daily_cap_minutes: 150
-  minutes_per_attack: 60
+  minutes_per_task: 60
   loss_penalty: halve_next_day   # none | halve_next_day | zero_next_day
 wake:
   goal_before: "12:00"
