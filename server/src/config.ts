@@ -20,6 +20,10 @@ const schema = z.object({
     .default('true')
     .transform((v) => v === 'true'),
   LOG_LEVEL: z.string().default('info'),
+  // Optional web push (generate with `npm run vapid`). Without them reminders are off.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default('mailto:admin@example.com'),
 });
 
 export type Config = z.infer<typeof schema>;

@@ -13,12 +13,15 @@ In `.env` set:
 - `ADMIN_PASSWORD_HASH`: run `cd server && npm ci && npm run hash-password` and paste the printed line (the password is typed hidden, 12+ characters).
 - `APP_PORT` if 3000 is already used on the server.
 
+- Optional reminders: `cd server && npm run vapid`, paste the three `VAPID_*` lines into `.env`.
+- Copy `config/player.example.yml` to `config/player.local.yml` (and `quests`, `clients`) and edit; the container reads `./config`. Everything can also be changed later in the app under Plan.
+
 ## 2. Start
 ```bash
 docker compose up -d --build
 curl -s http://127.0.0.1:3000/health     # {"status":"ok","db":true}
 ```
-Migrations run automatically on start (`MIGRATE_ON_START=true`).
+Migrations run automatically on start (`MIGRATE_ON_START=true`). The web app is served from the same address: open `https://life.<yourdomain>` on your phone, sign in, and use the browser menu to "Install app" / "Add to Home screen". A background job resolves each day at its deadline and sends the reminders.
 
 ## 3. nginx and DNS
 1. You point `life.<yourdomain>` at the server (DNS is yours to manage).

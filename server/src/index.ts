@@ -1,6 +1,9 @@
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createPool } from './db.js';
+import { startScheduler } from './scheduler.js';
+import { createWebPushSender } from './services/push.js';
+import { defaultConfigDir } from './services/settings.js';
 import { migrate } from './migrate.js';
 
 const config = loadConfig();
@@ -11,10 +14,18 @@ if (config.MIGRATE_ON_START) {
   if (applied.length) console.log(`Applied migrations: ${applied.join(', ')}`);
 }
 
-const app = await buildApp({ config, pool });
+const configDir = defaultConfigDir();
+const app = await buildApp({ config, pool, configDir });
+
+const sender = config.VAPID_PUBLIC_KEY && config.VAPID_PRIVATE_KEY
+  ? createWebPushSender({ publicKey: config.VAPID_PUBLIC_KEY, privateKey: config.VAPID_PRIVATE_KEY, subject: config.VAPID_SUBJECT })
+  : undefined;
+if (!sender) app.log.warn('VAPID keys not set: push reminders are disabled');
+const scheduler = startScheduler({ pool, configDir, sender, log: app.log });
 
 const shutdown = async (signal: string) => {
   app.log.info({ signal }, 'shutting down');
+  scheduler.stop();
   await app.close();
   await pool.end();
   process.exit(0);

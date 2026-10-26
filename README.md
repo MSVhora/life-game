@@ -2,7 +2,7 @@
 
 An open-source, deadline-driven productivity game for one player. A daily 24-hour window gives you a few small tasks and consequences. Sensors track your time, so you don't have to report it honestly. Game time is earned and capped.
 
-Status: **Phase 0 built** (server, Postgres, auth, Compose, backups). License: MIT.
+Status: **Phases 0 and 1 built** (server, game loop, web app). Phase 2 (automatic tracking) is next. License: MIT.
 
 ## Docs (read in this order)
 1. [docs/DECISIONS.md](docs/DECISIONS.md): settled choices

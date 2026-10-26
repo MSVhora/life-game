@@ -23,9 +23,11 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 | P0-7 | Public-repo hygiene: config loader (`*.local.*` over `*.example.*`), pre-commit secret/personal-data scan, CI check | Commit containing `.env`, `*.local.*` or token-like strings is blocked | P0-1 | M |
 | P0-6 | Core schema: events, time_blocks, days, tasks, evidence, budget, xp_ledger, adjustments | Matches ER diagram | P0-2 | M |
 
-## Phase 1: MVP game (manual only, usable on day 1)
+## Phase 1: MVP game (manual only, usable on day 1)  (status: built, see note)
 **Goal:** the deadline loop works before any automation exists.
 **Done when:** you play a full day end to end from your phone.
+
+**Status (2026-10-26):** P1-1 to P1-13 are implemented, with 80 automated tests and a manual click-through of the web app in a browser. Not yet verified on a real Android phone: installing the app to the home screen, the service worker, and push delivery (the embedded test browser blocks both). Onboarding Stage 1 is a settings form in the Plan tab rather than a wizard, and the goal interview's fixed-dates question is not built yet.
 
 | ID | Task | Acceptance criteria | Depends | Size |
 |---|---|---|---|---|
