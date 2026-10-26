@@ -1,0 +1,41 @@
+# Fake example of what onboarding produces. Real files: profile.local.yml and goals.local.yml (gitignored).
+profile:
+  timezone: Asia/Kolkata
+  day_ends_at: "23:00"
+  wake:
+    typical_range: ["13:00", "16:00"]
+    goal_before: "12:00"
+    ramp: very_slow          # very_slow | slow | normal | custom
+    ramp_minutes_per_week: 15
+    source: phone_unlock     # manual | phone_unlock | wearable
+  sleep:
+    goal_by: "03:00"
+  devices: [android, mac, ereader_manual]
+  browsers: [chrome, arc]
+  limited_apps: ["Example Mobile Game"]
+  gaming_daily_cap_minutes: 120
+  pressure: gradual          # data_only | gentle | gradual | harsh
+  neutral_defaults_minutes: { meal: 60, wash: 20, bath: 30 }
+  quiet_hours: ["01:00", "09:00"]
+goals:
+  - id: get-a-job
+    template: get_job
+    outcome: "Get an Android engineering role"
+    deadline_weeks: 8
+    done_when: { type: count, unit: applications, target: 30 }
+    start_state: some_prep
+    hours_per_week: 6
+    start_blocker: dont_open_it   # dont_open_it | drift | overwhelmed | stall | fear_of_rejection
+    markers:
+      - { type: csv, source: applications_csv }
+      - { type: site, domains: ["example-jobs.com"], store_full_url: true }
+      - { type: folder, source: prep_folder }
+    fixed_dates: []
+    phases: [research_targets, prepare, apply, interview_prep, interviews]
+ramp:
+  start_tasks_per_day: 1
+  raise_after_days_met: 5      # of 7
+  max_new_tasks_per_week: 1
+rewards:
+  per_task_max_minutes: 60
+  formula: "min(per_task_max_minutes, daily_cap / tasks_required)"

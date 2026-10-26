@@ -8,7 +8,8 @@ The repo is public. **Personal data never goes in tracked files.** Each config h
 | `config/quests.local.yml` | `config/quests.example.yml` | task templates, XP, minutes earned, evidence rules |
 | `config/clients.local.yml` | `config/clients.example.yml` | freelance clients, hourly rate, monthly caps |
 | `config/categories.local.json` | `config/categories.example.json` | app/site to Productive/Neutral/Waste rules |
-| `config/sources.local.yml` | `config/sources.example.yml` | watched folders, CSV paths, e-reader mount path |
+| `config/profile.local.yml`, `config/goals.local.yml` | `config/onboarding.example.yml` | answers from onboarding, goals, phases, ramp (see [ONBOARDING.md](ONBOARDING.md)) |
+| `config/sources.local.yml` | `config/sources.example.yml` | watched folders and CSV paths |
 | `.env` | `.env.example` | domain, DB URL, API tokens, backup key location |
 | `private/` | (none) | your notes, answers, context: whole folder ignored |
 

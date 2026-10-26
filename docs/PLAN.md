@@ -16,33 +16,34 @@ A **website (PWA) and backend on a private server you own**, plus one small help
 
 | Piece | What it is | Why |
 |---|---|---|
-| Server + website | Node/TypeScript API, database, game UI on your own domain (e.g. `life.example.com`), nightly encrypted backup to cloud storage | Always on, your data stays with you |
+| Server + website | Node/TypeScript API, database, game UI on your own domain (e.g. `life.example.com`), nightly Postgres dump to your cloud drive | Always on, your data stays with you |
 | Android | Small native Kotlin companion app (usage stats, wake detection, notifications, quick tile) plus the PWA for the main UI | ActivityWatch Android can't sync to a server cleanly; `UsageStatsManager` is the source Digital Wellbeing uses |
 | Mac | ActivityWatch (apps, AFK, browser extension) plus a small `launchd` sync agent | ActivityWatch has a local REST API on `localhost:5600` |
-| E-reader (Kobo) | No live tracking. Auto-import of `KoboReader.sqlite` when plugged into the Mac, plus optional manual start/stop from the phone | No API or custom apps |
+| E-reader (Kobo) | No live tracking and no data import. Manual start/stop from the phone | No API or custom apps |
 | Time tracker (Solidtime) | Server reads billable time entries through its API (optional) | Source of truth for freelance hours and money |
 | Work folder | Sync agent reports git commits and file/CSV changes from folders you list (never reads `.env` or secrets) | Unfakeable evidence for apply/research/prep quests |
 
 ## 3. Game design
-- **Daily Tasks:** 24h window ending at a configured time. Two mandatory tasks plus optional bonuses. Success = both tasks verified before the deadline.
+- **Daily Tasks:** 24h window ending at a configured time. Two mandatory tasks plus optional bonuses. Success = both tasks done before the deadline.
 - **Task 0 "Kickoff" (2 min):** sit at the desk, open the laptop, open the target site. You only have to start.
 - **Tiny, concrete tasks** generated from templates and your own files, e.g. "Finish one gap-check area (15 min)", "Add 1 company to the targets list", "Log 1 application".
 - **Big goal with phases** (progress bar) for a larger aim (e.g. getting a job): easy steps first, then apply, then mock interview. A graded ladder for fear of rejection.
-- **Gaming budget:** earn play minutes per verified task, with a hard daily cap. Measured from Android usage, not declared.
+- **Gaming budget:** earn play minutes per completed task, with a hard daily cap. Measured from Android usage, not declared.
 - **Time score:** Productive / Neutral / Waste. Meals, washing, bath and sleep are Neutral and never hurt you. Billable work is Productive.
 - **Pressure:** a virtual crew of named NPC mates whose "Reputation" opinion of you rises and falls; a private scoreboard link that turns red on a missed day; streak and rank loss. Severity is configurable. Nothing is ever auto-posted anywhere.
 - **XP / levels / loot**, a wake-up bonus with a goal that tightens over time, and a money meter for freelance income.
 - **Boredom Menu:** pre-approved 10-minute activities. Waste-app time triggers a nudge.
 - **Freelance mode (optional):** per-client hourly rate and monthly cap read from config; bonus work time, not a daily quest.
 
-## 4. Integrity rules (assume the player may lie on a bad day)
-1. Sensors outrank the player's word. Self-reported data is the lowest tier.
-2. Append-only log with server timestamps. Corrections are visible "adjustments" that cost XP.
-3. Quests need evidence (new row in a tracked CSV plus a job-site visit, commits or files in a prep folder, active time in the right app/site, Mac awake for "Kickoff"). No evidence = "Unverified": tiny XP, doesn't win the day or unlock game minutes.
-4. Manual routine timers are cross-checked against sensors. A "Lunch" timer while the Mac shows coding is flagged and not credited.
-5. Unaccounted time (no sensor or timer explains it) counts as Waste by default.
-6. Honest limit: a determined cheater can fool any tracker. The aim is to make lying harder than doing the task. A proof-screenshot path gives partial credit for work sensors missed.
-7. Privacy: data stays on your server; secret files are never read or synced; API tokens go in local config.
+## 4. Integrity: honest by default, light hints
+Decision: assume the player is honest (see [DECISIONS.md](DECISIONS.md)). The point is to *see* where time goes, not to catch cheating.
+1. Sensors (Mac activity, phone usage) are the main source of time data, so there is little to self-report.
+2. Tasks show a **marker** when matching activity exists (a new CSV row, commits, time on a listed site). The player can always tick a task manually.
+3. Manual routine timers (meals, bath, sleep) are trusted. If a sensor clearly disagrees, the app shows a gentle hint, never a penalty.
+4. Time that no sensor or timer explains is shown as "Unaccounted" so the player can label it. Whether it counts as Waste is a setting.
+5. Corrections are visible entries in an append-only log.
+6. Tracker paused? The player says why (family, festival, travel, illness); paused days are not penalised.
+7. Privacy: data stays on your server; secret files are never read; tokens live in `.env`. Full URLs are stored only for allow-listed public sites.
 
 ## 5. Manual inputs (only these)
 Wake ("I start"), Wash, Bath, Lunch, Dinner, Sleep, Out, and optionally Reading start/stop. Everything else is automatic.
