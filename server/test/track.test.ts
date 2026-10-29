@@ -144,6 +144,17 @@ describe.skipIf(!testDatabaseUrl)('tracking: ingest, stats, reports, labels', ()
     expect(missing.statusCode).toBe(404);
   });
 
+  it('treats app names with invisible characters as the same app', async () => {
+    await ingest([
+      ev('window', '2026-10-26T04:30:00Z', 600, { app: '\u200eWhatsApp' }, 'w:old'),
+      ev('window', '2026-10-26T04:40:00Z', 600, { app: 'WhatsApp' }, 'w:new'),
+    ]);
+    await post('/api/labels', { kind: 'app', value: 'WhatsApp', category: 'Productive' });
+    const r = (await get('/api/reports?range=today')).json();
+    expect(r.totals.Productive).toBe(1200);
+    expect(r.topItems.filter((i: { key: string }) => i.key.includes('WhatsApp'))).toHaveLength(1);
+  });
+
   it('lowercases domain labels and applies them to subdomains', async () => {
     await ingest([
       ev('window', '2026-10-26T04:30:00Z', 600, { app: 'Google Chrome' }),

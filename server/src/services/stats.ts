@@ -6,6 +6,8 @@ import { addDays, localDateString, zonedToInstant } from '../domain/time.js';
 import { TIMER_CATEGORY, type TimerKind } from '../domain/timers.js';
 import type { Settings } from './settings.js';
 
+const INVISIBLE = /[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g;
+
 export interface StatsCtx {
   pool: Pool;
   settings: Settings;
@@ -61,7 +63,8 @@ export async function computeRange(ctx: StatsCtx, range: Interval, classifier?: 
   for (const r of ev.rows) {
     const i = iv(r);
     if (i.end <= range.start || i.end <= i.start) continue;
-    if (r.kind === 'window' && typeof r.payload.app === 'string') windows.push({ ...i, app: r.payload.app });
+    // Older events may carry invisible direction marks in app names (the agent now strips them); match them anyway.
+    if (r.kind === 'window' && typeof r.payload.app === 'string') windows.push({ ...i, app: r.payload.app.replace(INVISIBLE, '').trim() });
     else if (r.kind === 'web' && typeof r.payload.domain === 'string') web.push({ ...i, domain: r.payload.domain, url: r.payload.url as string | undefined });
     else if (r.kind === 'afk') afk.push({ ...i, afk: r.payload.status === 'afk' });
   }
