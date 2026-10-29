@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Blocks commits that contain personal/secret files or token-like strings.
-# Default: checks staged files. With --all: checks every tracked file (used in CI).
+# Default: checks staged files. With --all: checks every tracked file (run by ./deploy.sh before it builds an image).
 set -uo pipefail
 cd "$(dirname "$0")/.."
 

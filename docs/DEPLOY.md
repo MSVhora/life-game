@@ -1,7 +1,7 @@
 # Deploy (Docker Compose behind your existing nginx)
 
 ## Fastest: run the prebuilt image
-GitHub Actions builds the image on every push to `main` (after the tests pass) and publishes it as `ghcr.io/<owner>/life-game` with the tags `latest`, a short commit id, and release versions (`1.2.0` for a `v1.2.0` tag). The server then needs no source code, only a compose file and a `.env`:
+Run `./deploy.sh` from this repo on your own machine: it checks that the tree is committed and free of secrets, builds the image from `server/Dockerfile`, and pushes it to `ghcr.io/<owner>/life-game` with the tags `latest` and the short commit id (`./deploy.sh 1.2.0` adds `1.2.0` and `1.2`). It builds `linux/amd64` by default; use `PLATFORMS=linux/amd64,linux/arm64 ./deploy.sh` for both. `DRY_RUN=1 ./deploy.sh` builds without pushing. The first time, log in with a token that has `write:packages` (the header of `deploy.sh` shows the command). An example GitHub Actions pipeline is kept in `deploy/github-actions.example.yml`, inactive. The server then needs no source code, only a compose file and a `.env`:
 ```bash
 # 1. Settings: copy .env.example to .env and fill it in (see "Build from source" below for each value).
 #    Admin password hash and push keys can be made with the image itself:

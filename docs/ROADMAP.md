@@ -20,7 +20,7 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 | P0-3 | Auth (single-user login + per-device API tokens) | Wrong token rejected; tokens revocable | P0-2 | M |
 | P0-4 | Deploy with Docker Compose behind existing nginx (owner sets DNS, HTTPS cert) | Reachable over HTTPS; restarts on reboot | P0-2 | M |
 | P0-5 | Nightly plain `pg_dump` to Google Drive + restore test | Restore into a fresh DB succeeds | P0-4 | S |
-| P0-7 | Public-repo hygiene: config loader (`*.local.*` over `*.example.*`), pre-commit secret/personal-data scan, CI check | Commit containing `.env`, `*.local.*` or token-like strings is blocked | P0-1 | M |
+| P0-7 | Public-repo hygiene: config loader (`*.local.*` over `*.example.*`), pre-commit secret/personal-data scan (`scripts/check-secrets.sh`) | Commit containing `.env`, `*.local.*` or token-like strings is blocked | P0-1 | M |
 | P0-6 | Core schema: events, time_blocks, days, tasks, evidence, budget, xp_ledger, adjustments | Matches ER diagram | P0-2 | M |
 
 ## Phase 1: MVP game (manual only, usable on day 1)  (status: built, see note)

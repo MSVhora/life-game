@@ -12,7 +12,7 @@ Status: **Phases 0-3 built** (server, game loop, web app, Mac tracking, reports,
 5. [docs/ROADMAP.md](docs/ROADMAP.md): phases 0 to 5 and every task with acceptance criteria
 6. [docs/CONFIGURATION.md](docs/CONFIGURATION.md): how personal data is kept out of the repo
 7. [docs/DOUBTS-AND-ISSUES.md](docs/DOUBTS-AND-ISSUES.md): open questions and risks
-8. [docs/DEPLOY.md](docs/DEPLOY.md): run it on your server
+8. [docs/DEPLOY.md](docs/DEPLOY.md): run it on your server (`./deploy.sh` builds and pushes the Docker image to GHCR)
 9. [docs/AGENT.md](docs/AGENT.md): Mac tracking with ActivityWatch
 10. [docs/ANDROID.md](docs/ANDROID.md): the Android companion app, with [spec](docs/android/SPEC.md) and [architecture](docs/android/ARCHITECTURE.md)
 
