@@ -16,7 +16,9 @@ services:
     # Not published: only the app container can reach the database.
 
   app:
-    build: ./server
+    build:
+      context: .
+      dockerfile: server/Dockerfile
     restart: unless-stopped
     depends_on:
       db:

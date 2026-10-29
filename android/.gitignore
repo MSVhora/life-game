@@ -9,3 +9,6 @@ captures/
 .cxx/
 *.apk
 *.aab
+
+# IDE output directories
+bin/

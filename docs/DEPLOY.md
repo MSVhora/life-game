@@ -1,5 +1,21 @@
 # Deploy (Docker Compose behind your existing nginx)
 
+## Fastest: run the prebuilt image
+GitHub Actions builds the image on every push to `main` (after the tests pass) and publishes it as `ghcr.io/<owner>/life-game` with the tags `latest`, a short commit id, and release versions (`1.2.0` for a `v1.2.0` tag). The server then needs no source code, only a compose file and a `.env`:
+```bash
+# 1. Settings: copy .env.example to .env and fill it in (see "Build from source" below for each value).
+#    Admin password hash and push keys can be made with the image itself:
+printf '%s\n' 'a password of 12+ characters' | docker run --rm -i ghcr.io/<owner>/life-game node dist/cli/hash-password.js --stdin
+docker run --rm ghcr.io/<owner>/life-game node dist/cli/vapid.js
+# 2. Run it (deploy/docker-compose.image.yml in this repo):
+docker compose -f docker-compose.image.yml pull && docker compose -f docker-compose.image.yml up -d
+# 3. Update later:
+docker compose -f docker-compose.image.yml pull && docker compose -f docker-compose.image.yml up -d
+```
+The image contains the built-in default settings, so no `config/` folder is needed; add `config/*.local.yml` and mount it only to override defaults. If the package is private, run `docker login ghcr.io` with a token that has `read:packages` first.
+
+## Build from source
+
 Everything runs in two containers: `db` (Postgres, not exposed) and `app` (the API, bound to `127.0.0.1` only). Your nginx proxies HTTPS to the app.
 
 ## 1. First setup

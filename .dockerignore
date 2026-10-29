@@ -1,0 +1,16 @@
+# Keep the build context small and free of anything personal.
+.git
+.github
+private
+.env
+.env.*
+android
+agent
+docs
+scripts
+deploy
+**/node_modules
+**/dist
+**/build
+**/*.log
+**/.DS_Store

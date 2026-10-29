@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -19,6 +20,27 @@ describe('password hashing', () => {
   it('rejects malformed stored hashes', async () => {
     expect(await verifyPassword('x', 'not-a-hash')).toBe(false);
     expect(await verifyPassword('x', 'bcrypt:1:2:3:4:5')).toBe(false);
+  });
+});
+
+describe('hash-password CLI (scripted use)', () => {
+  const run = (input: string) =>
+    spawnSync(process.execPath, ['--import', 'tsx', 'src/cli/hash-password.ts', '--stdin'], { input, encoding: 'utf8' });
+
+  it('prints a hash that verifies against the password it was given', async () => {
+    const r = run('a-long-test-password\n');
+    expect(r.status).toBe(0);
+    const hash = r.stdout.trim().replace('ADMIN_PASSWORD_HASH=', '');
+    expect(await verifyPassword('a-long-test-password', hash)).toBe(true);
+    expect(await verifyPassword('another-long-password', hash)).toBe(false);
+  });
+
+  it('refuses short or missing passwords', () => {
+    for (const input of ['short\n', '']) {
+      const r = run(input);
+      expect(r.status).toBe(1);
+      expect(r.stderr).toMatch(/at least 12/);
+    }
   });
 });
 
@@ -71,6 +93,26 @@ describe('local-over-example config files', () => {
     const local = loadConfigFile<{ day: { ends_at: string } }>(dir, 'player');
     expect(local.source).toBe('local');
     expect(local.data.day.ends_at).toBe('22:00');
+  });
+
+  it('falls back to the built-in defaults directory, but prefers the configured one', () => {
+    const mounted = mkdtempSync(path.join(tmpdir(), 'lg-cfg-'));
+    const defaults = mkdtempSync(path.join(tmpdir(), 'lg-defaults-'));
+    writeFileSync(path.join(defaults, 'player.example.yml'), 'day:\n  ends_at: "23:00"\n');
+    const before = process.env.CONFIG_DEFAULTS_DIR;
+    process.env.CONFIG_DEFAULTS_DIR = defaults;
+    try {
+      const fromDefaults = loadConfigFile<{ day: { ends_at: string } }>(mounted, 'player');
+      expect(fromDefaults.data.day.ends_at).toBe('23:00');
+      expect(fromDefaults.path.startsWith(defaults)).toBe(true);
+
+      writeFileSync(path.join(mounted, 'player.example.yml'), 'day:\n  ends_at: "21:00"\n');
+      expect(loadConfigFile<{ day: { ends_at: string } }>(mounted, 'player').data.day.ends_at).toBe('21:00');
+      expect(() => loadConfigFile(mounted, 'nothing')).toThrow(/ or /);
+    } finally {
+      if (before === undefined) delete process.env.CONFIG_DEFAULTS_DIR;
+      else process.env.CONFIG_DEFAULTS_DIR = before;
+    }
   });
 
   it('throws when neither file exists', () => {

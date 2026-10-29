@@ -1,0 +1,50 @@
+# Runs Life Game from the prebuilt image (no source code needed on the server).
+# Copy this file next to a .env made from ../.env.example, then:  docker compose -f docker-compose.image.yml up -d
+# A ready-made version with setup and backup scripts for a multi-app server lives in the
+# self-hosted-apps repository (apps/life-game).
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: life-game-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-life}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-life}
+    volumes:
+      - life-game-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-life} -d $${POSTGRES_DB:-life}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - life-game-network
+
+  app:
+    image: ghcr.io/msvhora/life-game:${LIFE_GAME_IMAGE_TAG:-latest}
+    container_name: life-game
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-life}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-life}
+      PORT: "3000"
+      CONFIG_DIR: /app/config
+    volumes:
+      # Optional personal settings (config/*.local.yml). Anything missing falls back to the image's built-in defaults.
+      - ./config:/app/config:ro
+    ports:
+      - "127.0.0.1:${FORWARD_APP_PORT:-3017}:3000"
+    networks:
+      - life-game-network
+
+networks:
+  life-game-network:
+    driver: bridge
+
+volumes:
+  life-game-pgdata:
