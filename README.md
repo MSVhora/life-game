@@ -14,7 +14,7 @@ Status: **Phases 0-3 built** (server, game loop, web app, Mac tracking, reports,
 7. [docs/DOUBTS-AND-ISSUES.md](docs/DOUBTS-AND-ISSUES.md): open questions and risks
 8. [docs/DEPLOY.md](docs/DEPLOY.md): run it on your server
 9. [docs/AGENT.md](docs/AGENT.md): Mac tracking with ActivityWatch
-10. [docs/ANDROID.md](docs/ANDROID.md): the Android companion app
+10. [docs/ANDROID.md](docs/ANDROID.md): the Android companion app, with [spec](docs/android/SPEC.md) and [architecture](docs/android/ARCHITECTURE.md)
 
 ## Your own data
 This repo ships formats and fake examples only (`config/*.example.*`, `.env.example`). Copy them to `*.local.*` / `.env` and fill in your values; those files and the `private/` folder are gitignored.

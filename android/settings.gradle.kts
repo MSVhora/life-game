@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "LifeGame"
-include(":app")
+include(":core", ":data", ":app")

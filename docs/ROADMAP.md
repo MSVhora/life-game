@@ -69,7 +69,7 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 **Goal:** phone usage and wake time are tracked automatically and the game follows you.
 **Done when:** game time on the phone is measured and a wake time is recorded without a tap.
 
-**Status (2026-10-29):** P3-1 to P3-6 and P3-8 are implemented, and P3-7 as nudges only (no blocking). The server gained phone ingest, a status endpoint, phone-controlled wake and timers, wake detection from phone use, and game time that counts Mac and phone gaming. 143 server tests and 46 Android unit tests pass, and the app ran on an Android 14 emulator against the real server (usage upload, countdown notification, game-time nudge, both quick-settings tiles). **Not yet verified:** a real Samsung S23, One UI battery behaviour, wake detection over a real night, and an HTTPS server. See [ANDROID.md](ANDROID.md).
+**Status (2026-10-29):** P3-1 to P3-6 and P3-8 are implemented, and P3-7 as nudges only (no blocking). The server gained phone ingest, a status endpoint, phone-controlled wake and timers, wake detection from phone use, and game time that counts Mac and phone gaming. 143 server tests and 84 Android unit tests pass, and the app ran on an Android 14 emulator against the real server (usage upload, countdown notification, game-time nudge, both quick-settings tiles); the app was then restructured into three modules with a Compose Material 3 UI and written specs ([android/SPEC.md](android/SPEC.md), [android/ARCHITECTURE.md](android/ARCHITECTURE.md)). **Not yet verified:** a real Samsung S23, One UI battery behaviour, wake detection over a real night, and an HTTPS server. See [ANDROID.md](ANDROID.md).
 
 | ID | Task | Acceptance criteria | Depends | Size |
 |---|---|---|---|---|

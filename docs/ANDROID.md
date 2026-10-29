@@ -12,6 +12,8 @@ phone usage data -> app (queue on the phone) -> your server -> Insights, game ti
                          ^ works offline, uploads when it can
 ```
 
+The code is split into three modules (`:core` pure Kotlin, `:data` Android implementations, `:app` Compose UI and system components). What the app must do is in [android/SPEC.md](android/SPEC.md); how it is built is in [android/ARCHITECTURE.md](android/ARCHITECTURE.md).
+
 ## Install on your phone (sideload)
 1. On the phone: Settings > About phone > tap Build number 7 times, then Settings > Developer options > turn on **USB debugging**.
 2. On the Mac, with the phone connected by USB:
@@ -21,6 +23,7 @@ export JAVA_HOME=$(/usr/libexec/java_home -v 21)     # any JDK 17 or newer works
 ./gradlew :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+Run the tests with `./gradlew :core:test :app:testDebugUnitTest`. Updating over an older install keeps your server address and token.
 (No USB? Copy `app-debug.apk` to the phone and open it; allow "install unknown apps" for your file manager when asked.)
 
 ## Set it up
@@ -32,7 +35,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
    - **Battery**: choose "unrestricted". On Samsung also open Settings > Apps > Life Game > Battery > **Unrestricted**, and make sure Life Game is not in Battery > Background usage limits > Sleeping or Deep sleeping apps. Otherwise One UI may stop it.
 4. Tap **Start tracking**. The countdown notification appears.
 5. Swipe down twice, tap the pencil (edit), and drag **I'm up** and **Timer** into your quick settings.
-6. In the web app, open **Insights**: phone apps appear under "Label these". Give each a category (games = Gaming) and game time starts counting.
+6. The app has two screens: **Today** (countdown, game time, wake-up, timer) and **Setup** (server, permissions, tracking switch). In the web app, open **Insights**: phone apps appear under "Label these". Give each a category (games = Gaming) and game time starts counting.
 
 ## Wake-up detection
 In the web app: **Plan > Your rules > How is your wake-up recorded?** and pick the phone option. The wake-up is then the first phone activity after a quiet gap of 3 hours or more, if that happened within the last 18 hours. A long single session (reading for hours) does not count as quiet. You can still tap "I'm up" yourself; whichever comes first for the day is kept.
@@ -59,4 +62,4 @@ The token is stored encrypted with a key that never leaves the phone's secure ha
 - A release build with your own signing key. The debug build above is fine for your own phone.
 
 ## Not yet verified
-Built and tested on an emulator (Android 14), with 46 unit tests. **Not yet tried on a real Samsung S23:** how One UI's battery management treats the service, real usage numbers, or the wake-up detection over a real night. It has also not talked to a deployed HTTPS server.
+Built and tested on an emulator (Android 14), with 84 unit tests (68 in `:core`, 16 view-model tests in `:app`). **Not yet tried on a real Samsung S23:** how One UI's battery management treats the service, real usage numbers, or the wake-up detection over a real night. It has also not talked to a deployed HTTPS server.

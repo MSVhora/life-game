@@ -15,15 +15,17 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
 
     <application
+        android:name=".LifeGameApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/Theme.LifeGame">
 
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -31,7 +33,7 @@
         </activity>
 
         <service
-            android:name=".TrackingService"
+            android:name=".system.TrackingService"
             android:exported="false"
             android:foregroundServiceType="specialUse">
             <property
@@ -40,12 +42,12 @@
         </service>
 
         <service
-            android:name=".SyncJobService"
+            android:name=".system.SyncJobService"
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <receiver
-            android:name=".BootReceiver"
+            android:name=".system.BootReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -54,7 +56,7 @@
         </receiver>
 
         <service
-            android:name=".WakeTileService"
+            android:name=".system.WakeTileService"
             android:exported="true"
             android:icon="@drawable/ic_tile"
             android:label="@string/tile_wake"
@@ -65,7 +67,7 @@
         </service>
 
         <service
-            android:name=".TimerTileService"
+            android:name=".system.TimerTileService"
             android:exported="true"
             android:icon="@drawable/ic_tile"
             android:label="@string/tile_timer"

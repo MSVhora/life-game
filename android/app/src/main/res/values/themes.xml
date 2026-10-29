@@ -1,5 +1,6 @@
 <resources>
-    <style name="AppTheme" parent="android:Theme.DeviceDefault.DayNight">
+    <!-- Compose draws everything; this theme only sets the window (no action bar, edge to edge). -->
+    <style name="Theme.LifeGame" parent="android:Theme.DeviceDefault.DayNight">
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
     </style>

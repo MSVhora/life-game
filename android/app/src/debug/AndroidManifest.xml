@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application android:networkSecurityConfig="@xml/network_security_debug">
-        <!-- Debug builds only: configure the server and token from adb, so automated checks need no typing. -->
+        <!-- Debug builds only: configure the server and token from adb, so scripted checks need no typing. -->
         <receiver
             android:name=".DebugConfigReceiver"
             android:exported="true" />
