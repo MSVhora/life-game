@@ -27,6 +27,8 @@ export const settingsSchema = z.object({
   wakeGoalBefore: hhmm,
   wakeGoalFinal: hhmm,
   wakeRampMinutesPerWeek: z.number().int().min(0).max(180),
+  /** Where the wake-up time comes from: tapping "I'm up", or the first phone use after a long quiet gap. */
+  wakeSource: z.enum(['manual', 'phone']),
   sleepGoalBy: hhmm,
 });
 export type Settings = z.infer<typeof settingsSchema>;
@@ -53,7 +55,7 @@ interface PlayerFile {
   timezone?: string;
   day?: { ends_at?: string; tasks_required?: number; grace_days_per_week?: number };
   gaming?: { daily_cap_minutes?: number; minutes_per_task?: number; loss_penalty?: string };
-  wake?: { goal_before?: string; final_goal?: string; ramp_minutes_per_week?: number };
+  wake?: { goal_before?: string; final_goal?: string; ramp_minutes_per_week?: number; source?: string };
   sleep?: { goal_by?: string };
   pressure?: { level?: string };
   ramp?: { max_tasks_per_day?: number; raise_after_days_met?: number };
@@ -75,6 +77,7 @@ export function defaultSettings(configDir: string): Settings {
     wakeGoalBefore: f.wake?.goal_before ?? '12:00',
     wakeGoalFinal: f.wake?.final_goal ?? f.wake?.goal_before ?? '12:00',
     wakeRampMinutesPerWeek: f.wake?.ramp_minutes_per_week ?? 0,
+    wakeSource: f.wake?.source ?? 'manual',
     sleepGoalBy: f.sleep?.goal_by ?? '03:00',
   });
 }

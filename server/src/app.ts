@@ -7,6 +7,7 @@ import type { Config } from './config.js';
 import type { Pool } from './db.js';
 import { authRoutes } from './routes/auth.js';
 import { deviceRoutes } from './routes/devices.js';
+import { companionRoutes } from './routes/companion.js';
 import { gameRoutes } from './routes/game.js';
 import { pushRoutes } from './routes/push.js';
 import { trackRoutes } from './routes/track.js';
@@ -52,6 +53,7 @@ export async function buildApp({ config, pool, configDir = defaultConfigDir(), c
   await app.register(authRoutes, { config });
   await app.register(deviceRoutes, { pool });
   await app.register(gameRoutes, { pool, configDir, clock });
+  await app.register(companionRoutes, { pool, configDir, clock });
   await app.register(trackRoutes, { pool, configDir, clock, timeTracker: timeTrackerConfig(config), fetcher: timeTrackerFetch });
 
   const vapid = config.VAPID_PUBLIC_KEY && config.VAPID_PRIVATE_KEY

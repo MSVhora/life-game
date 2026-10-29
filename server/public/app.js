@@ -261,6 +261,7 @@ function planView() {
         ${selectField('If you miss a day', 'lossPenalty', { none: 'Nothing happens', halve_next_day: 'Halve tomorrow\'s game time', zero_next_day: 'No game time tomorrow' }, p.lossPenalty)}
         ${selectField('Pressure', 'pressure', { data_only: 'Just show me data', gentle: 'Gentle', gradual: 'Gradual', harsh: 'Harsh' }, p.pressure)}
         ${field('Forgiven misses per week', 'graceDaysPerWeek', p.graceDaysPerWeek, 'type="number" min="0" max="3" required')}
+        ${selectField('How is your wake-up recorded?', 'wakeSource', { manual: 'I tap "I\'m up"', phone: 'First phone use after a quiet night (Android app)' }, p.wakeSource)}
         ${field('Wake-up goal (before)', 'wakeGoalBefore', p.wakeGoalBefore, 'type="time" required')}
         ${field('Where the wake goal ends up', 'wakeGoalFinal', p.wakeGoalFinal, 'type="time" required')}
         ${field('Move the wake goal earlier by (min per week)', 'wakeRampMinutesPerWeek', p.wakeRampMinutesPerWeek, 'type="number" min="0" max="180" required', '0 keeps it fixed. Go slowly.')}
@@ -404,14 +405,16 @@ function moreView() {
   const origin = location.origin;
   return html`<main class="page stack">
     <section class="card stack"><h2>Connect a device</h2>
-      <p class="muted small">The Mac agent sends what you do on the computer (apps, sites, work-folder activity) so you do not have to log it.</p>
-      ${state.newToken ? html`<div class="notice ok" role="status"><p><strong>Token for ${state.newToken.name}.</strong> Shown once. Run this on that Mac:</p>
-        <pre class="code">mkdir -p ~/.life-game-agent &amp;&amp; printf '%s' '${state.newToken.token}' &gt; ~/.life-game-agent/token &amp;&amp; chmod 600 ~/.life-game-agent/token
+      <p class="muted small">The Mac agent and the Android app send what you do (apps, sites, work-folder activity) so you do not have to log it.</p>
+      ${state.newToken ? html`<div class="notice ok" role="status"><p><strong>Token for ${state.newToken.name}.</strong> Shown once.</p>
+        ${state.newToken.kind === 'android' ? html`<p class="small">In the Android app, enter this server address and the token below, then tap "Save and test connection".</p><pre class="code">${origin}
+${state.newToken.token}</pre>
+        <p class="small">Setup steps: docs/ANDROID.md.</p>` : html`<p class="small">Run this on that Mac:</p><pre class="code">mkdir -p ~/.life-game-agent &amp;&amp; printf '%s' '${state.newToken.token}' &gt; ~/.life-game-agent/token &amp;&amp; chmod 600 ~/.life-game-agent/token
 export LIFE_GAME_URL=${origin}</pre>
-        <p class="small">Then follow docs/AGENT.md to start the agent.</p>
+        <p class="small">Then follow docs/AGENT.md to start the agent.</p>`}
         <button class="btn small" data-action="copy-token">Copy token</button> <button class="btn small" data-action="token-done">I saved it</button></div>` : ''}
       ${(state.devices || []).filter((x) => !x.revoked_at).map((x) => html`<div class="list-row"><div class="grow"><div class="title">${x.name}</div><div class="meta">${x.kind} · last data ${ago(x.last_event_at)} · ${x.event_count} events</div></div><button class="btn small danger" data-action="device-revoke" data-id="${x.id}">Revoke</button></div>`)}
-      <form class="row" data-form="device"><input name="name" placeholder="Name, e.g. My Mac" maxlength="80" required aria-label="Device name"><button class="btn small primary" type="submit">Connect a Mac</button></form>
+      <form class="stack" data-form="device"><div class="form-grid">${field('Name', 'name', '', 'maxlength="80" required placeholder="e.g. My Mac or My phone"')}${selectField('Type', 'kind', { mac: 'Mac', android: 'Android phone' }, 'mac')}</div><button class="btn small primary" type="submit">Create a token</button></form>
     </section>
 
     <section class="card stack"><h2>Baseline week</h2>
@@ -584,8 +587,8 @@ document.addEventListener('submit', (e) => {
     });
   } else if (kind === 'device') {
     run(async () => {
-      const r = await api('POST', '/api/devices', { name: f.name, kind: 'mac' });
-      state.newToken = { name: r.name, token: r.token };
+      const r = await api('POST', '/api/devices', { name: f.name, kind: f.kind === 'android' ? 'android' : 'mac' });
+      state.newToken = { name: r.name, token: r.token, kind: r.kind };
       await loadDevices();
       render();
     });

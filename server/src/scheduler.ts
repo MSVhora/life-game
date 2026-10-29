@@ -1,6 +1,7 @@
 import type { Pool } from './db.js';
 import { tick } from './services/engine.js';
 import { runMarkers } from './services/markers.js';
+import { detectPhoneWake } from './services/phoneWake.js';
 import { recomputeDirty } from './services/stats.js';
 import { syncTimeEntries, type TimeTrackerConfig } from './services/timetracker.js';
 import { runReminders, type PushSender } from './services/push.js';
@@ -30,6 +31,7 @@ export function startScheduler(deps: SchedulerDeps): { stop: () => void; runOnce
       await tick(ctx);
       await recomputeDirty(ctx);
       await runMarkers(ctx);
+      await detectPhoneWake(ctx);
       if (timeTracker && ctx.now.getTime() - lastTrackerSync > 10 * 60_000) {
         lastTrackerSync = ctx.now.getTime();
         await syncTimeEntries({ pool, timezone: ctx.settings.timezone, now: ctx.now }, timeTracker, fetcher).catch((e) => log.error('time tracker sync failed', e));

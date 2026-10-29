@@ -65,9 +65,11 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 | P2-11 | Baseline week mode (observe only, day-3 app labelling, end-of-week summary) | After 7 days a baseline summary is shown and categories built | P2-9, P2-4 | M |
 | P2-8 | Solidtime connector + money meter (per-client rate and caps from `clients.local.yml`) | Hours and ₹ match Solidtime for a test week | P0-4 | M |
 
-## Phase 3: Android app
+## Phase 3: Android app  (status: built, emulator-tested)
 **Goal:** phone usage and wake time are tracked automatically and the game follows you.
 **Done when:** game time on the phone is measured and a wake time is recorded without a tap.
+
+**Status (2026-10-29):** P3-1 to P3-6 and P3-8 are implemented, and P3-7 as nudges only (no blocking). The server gained phone ingest, a status endpoint, phone-controlled wake and timers, wake detection from phone use, and game time that counts Mac and phone gaming. 143 server tests and 46 Android unit tests pass, and the app ran on an Android 14 emulator against the real server (usage upload, countdown notification, game-time nudge, both quick-settings tiles). **Not yet verified:** a real Samsung S23, One UI battery behaviour, wake detection over a real night, and an HTTPS server. See [ANDROID.md](ANDROID.md).
 
 | ID | Task | Acceptance criteria | Depends | Size |
 |---|---|---|---|---|
@@ -78,7 +80,7 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 | P3-5 | Notifications: day countdown (ongoing), budget warnings | Updates without opening the app | P3-1 | M |
 | P3-6 | Quick tile/widget for routine timers | One tap starts/stops a timer | P1-5 | M |
 | P3-8 | Keep-alive: restart on boot/unlock/charging/alarm events, heartbeat to server, "tracker off" prompt asks why | Service recovers after being killed; reason recorded for gaps | P3-1 | M |
-| P3-7 | Friction blocking for over-budget apps (confirm delay / overlay), player can disable it | Overlay appears at budget limit; disabling takes deliberate steps | P3-2, P1-3 | M |
+| P3-7 | Game-time nudges (built). Friction blocking overlay is still open | Nudge fires while a game app is open and time is low or over | P3-2, P1-3 | M |
 
 ## Phase 4: Gentle integrity and pressure
 **Goal:** the app stays honest-by-default with light hints, and the chosen pressure level is live.

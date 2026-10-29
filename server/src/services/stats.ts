@@ -28,6 +28,24 @@ export async function loadClassifier(pool: Pool, configDir: string): Promise<Cla
   return makeClassifier(file, rows);
 }
 
+/** App names the player (or the rules file) counts as Gaming, so the phone can warn about them live. */
+export async function gamingAppNames(pool: Pool, configDir: string): Promise<string[]> {
+  const names = new Set<string>();
+  const { rows } = await pool.query<{ value: string }>(`SELECT value FROM app_labels WHERE kind = 'app' AND category = 'Gaming'`);
+  rows.forEach((r) => names.add(r.value));
+  try {
+    for (const r of loadConfigFile<RuleFile>(configDir, 'categories', 'json').data.rules ?? []) {
+      if (r.category === 'Gaming' && r.match?.app) names.add(r.match.app);
+    }
+  } catch {
+    // no rules file
+  }
+  // A label the player set to something else wins over a file rule.
+  const overridden = await pool.query<{ value: string }>(`SELECT value FROM app_labels WHERE kind = 'app' AND category <> 'Gaming'`);
+  overridden.rows.forEach((r) => names.delete(r.value));
+  return [...names].sort();
+}
+
 export function dayRange(date: string, tz: string): Interval {
   return {
     start: zonedToInstant(date, '00:00', tz).getTime(),
@@ -49,7 +67,7 @@ export async function computeRange(ctx: StatsCtx, range: Interval, classifier?: 
 
   const ev = await pool.query<EventRow>(
     `SELECT kind, ts, payload FROM events
-      WHERE source = 'activitywatch' AND kind IN ('window', 'web', 'afk')
+      WHERE ((source = 'activitywatch' AND kind IN ('window', 'web', 'afk')) OR (source = 'android' AND kind = 'app_usage'))
         AND ts < $2 AND ts >= $1::timestamptz - interval '1 day'`,
     [new Date(range.start), new Date(range.end)],
   );
@@ -58,13 +76,15 @@ export async function computeRange(ctx: StatsCtx, range: Interval, classifier?: 
     return { start, end: start + Math.max(0, Number(r.payload.duration ?? 0)) * 1000 };
   };
   const windows: Parameters<typeof buildTimeline>[0]['windows'] = [];
+  const phone: Parameters<typeof buildTimeline>[0]['windows'] = [];
   const web: Parameters<typeof buildTimeline>[0]['web'] = [];
   const afk: Parameters<typeof buildTimeline>[0]['afk'] = [];
   for (const r of ev.rows) {
     const i = iv(r);
     if (i.end <= range.start || i.end <= i.start) continue;
     // Older events may carry invisible direction marks in app names (the agent now strips them); match them anyway.
-    if (r.kind === 'window' && typeof r.payload.app === 'string') windows.push({ ...i, app: r.payload.app.replace(INVISIBLE, '').trim() });
+    if (r.kind === 'app_usage' && typeof r.payload.app === 'string') phone.push({ ...i, app: r.payload.app.replace(INVISIBLE, '').trim() });
+    else if (r.kind === 'window' && typeof r.payload.app === 'string') windows.push({ ...i, app: r.payload.app.replace(INVISIBLE, '').trim() });
     else if (r.kind === 'web' && typeof r.payload.domain === 'string') web.push({ ...i, domain: r.payload.domain, url: r.payload.url as string | undefined });
     else if (r.kind === 'afk') afk.push({ ...i, afk: r.payload.status === 'afk' });
   }
@@ -87,7 +107,7 @@ export async function computeRange(ctx: StatsCtx, range: Interval, classifier?: 
     manual.push({ start: r0.started_at.getTime(), end: ctx.now.getTime(), category: TIMER_CATEGORY[r0.kind], label: r0.label ?? r0.kind });
   }
 
-  return buildTimeline({ range, tz: settings.timezone, windows, web, afk, manual, classifier: cls });
+  return buildTimeline({ range, tz: settings.timezone, windows, phone, web, afk, manual, classifier: cls });
 }
 
 export async function saveDay(pool: Pool, date: string, r: TimelineResult): Promise<void> {

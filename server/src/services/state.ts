@@ -9,6 +9,7 @@ import {
 import { daysBetween, cycleFor, localDateString } from '../domain/time.js';
 import { describeBaseline, getBaseline } from './baseline.js';
 import { getRamp, resolvedDays, tick, type EngineCtx } from './engine.js';
+import { computeRange } from './stats.js';
 import { markersByTask } from './markers.js';
 import { getGoals, getSetting, rampStartDate } from './settings.js';
 
@@ -57,17 +58,13 @@ export async function buildState(ctx: EngineCtx) {
     [dayId],
   );
   const budget = budgetRes.rows[0] ?? { cap_minutes: 0, earned_minutes: 0 };
-  const gamingRes = await pool.query<{ minutes: string }>(
-    `SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (LEAST(end_at, $2::timestamptz) - GREATEST(start_at, $1::timestamptz))) / 60), 0) AS minutes
-       FROM time_blocks WHERE category = 'Gaming' AND end_at > $1 AND start_at < $2`,
-    [day.starts_at, day.ends_at],
-  );
   const timerRes = await pool.query<{ id: string; kind: string; label: string | null; started_at: Date }>(
     'SELECT id, kind, label, started_at FROM timers WHERE stopped_at IS NULL',
   );
   const running = timerRes.rows[0];
-  let usedMinutes = Number(gamingRes.rows[0]!.minutes);
-  if (running?.kind === 'gaming') usedMinutes += Math.max(0, (now.getTime() - running.started_at.getTime()) / 60000);
+  // Game time is everything classed as Gaming in this cycle: manual timers, the Mac, and the phone.
+  const upto = Math.min(now.getTime(), day.ends_at.getTime());
+  const usedMinutes = upto > day.starts_at.getTime() ? (await computeRange(ctx, { start: day.starts_at.getTime(), end: upto })).totals.Gaming / 60 : 0;
 
   const xpRes = await pool.query<{ total: string }>('SELECT COALESCE(SUM(delta), 0) AS total FROM xp_ledger');
   const xp = Number(xpRes.rows[0]!.total);

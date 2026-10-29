@@ -12,6 +12,7 @@ wake:
   goal_before: "12:00"      # wake-up goal today
   final_goal: "09:00"       # where the goal slowly moves to
   ramp_minutes_per_week: 15 # 0 = never move; irregular sleepers should go slowly
+  source: manual            # manual (tap "I'm up") | phone (first phone use after a 3+ hour quiet gap)
 sleep:
   goal_by: "03:00"
 pressure:

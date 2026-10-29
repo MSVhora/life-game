@@ -14,6 +14,8 @@ export interface TimelineInput {
   range: Interval;
   tz: string;
   windows: WindowEv[];
+  /** Foreground app sessions from the phone. They outrank Mac activity when both overlap. */
+  phone?: WindowEv[];
   web: WebEv[];
   afk: AfkEv[];
   manual: ManualBlock[];
@@ -43,7 +45,7 @@ export interface TimelineResult {
   firstGamingMin: number | null;
 }
 
-const PRIORITY = { away: 1, sensor: 2, manual: 3 } as const;
+const PRIORITY = { away: 1, sensor: 2, phone: 2.5, manual: 3 } as const;
 interface Leaf extends Segment { priority: number }
 
 const clip = (iv: Interval, range: Interval): Interval | null => {
@@ -147,6 +149,11 @@ export function buildTimeline(input: TimelineInput): TimelineResult {
         leaves.push(appLeaf(piece, w.app, appCategory));
       }
     }
+  }
+
+  for (const p of input.phone ?? []) {
+    const c = clip(p, range);
+    if (c) leaves.push({ ...appLeaf(c, p.app, classifier.classifyApp(p.app)), priority: PRIORITY.phone });
   }
 
   for (const m of input.manual) {

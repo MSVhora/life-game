@@ -301,8 +301,9 @@ export async function stopTimer(ctx: EngineCtx): Promise<{ kind: TimerKind; minu
 }
 
 /** "I'm up": ends a running sleep timer, records today's wake time once, and awards XP. */
-export async function logWake(ctx: EngineCtx): Promise<{ wokeAt: Date; beforeGoal: boolean; xp: number; alreadyLogged: boolean }> {
-  const { pool, settings, now } = ctx;
+export async function logWake(ctx: EngineCtx, wokeAtOverride?: Date, source: 'manual' | 'phone' = 'manual'): Promise<{ wokeAt: Date; beforeGoal: boolean; xp: number; alreadyLogged: boolean }> {
+  const { pool, settings } = ctx;
+  const now = wokeAtOverride ?? ctx.now;
   const date = localDateString(now, settings.timezone);
   const start = await rampStartDate(pool, settings.timezone, now);
   const goal = effectiveWakeGoal({
@@ -316,15 +317,15 @@ export async function logWake(ctx: EngineCtx): Promise<{ wokeAt: Date; beforeGoa
     const running = await c.query<{ kind: string }>(`SELECT kind FROM timers WHERE stopped_at IS NULL`);
     if (running.rows[0]?.kind === 'sleep') await stopRunning(c, now);
     const ins = await c.query(
-      `INSERT INTO wake_logs (local_date, woke_at) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING local_date`,
-      [date, now],
+      `INSERT INTO wake_logs (local_date, woke_at, source) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING local_date`,
+      [date, now, source],
     );
     const existing = await c.query<{ woke_at: Date }>('SELECT woke_at FROM wake_logs WHERE local_date = $1', [date]);
     const wokeAt = existing.rows[0]!.woke_at;
     const beforeGoal = localMinutesOfDay(wokeAt, settings.timezone) <= minutesOfDay(goal);
     if (!ins.rowCount) return { wokeAt, beforeGoal, xp: 0, alreadyLogged: true };
     const xp = beforeGoal ? 15 : 5;
-    await c.query(`INSERT INTO xp_ledger (delta, reason, ts) VALUES ($1, 'wake', $2)`, [xp, now]);
+    await c.query(`INSERT INTO xp_ledger (delta, reason, ts) VALUES ($1, 'wake', $2)`, [xp, ctx.now]);
     return { wokeAt, beforeGoal, xp, alreadyLogged: false };
   });
 }

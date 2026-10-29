@@ -18,7 +18,7 @@ export interface TrackDeps {
 }
 
 const eventSchema = z.object({
-  source: z.enum(['activitywatch', 'folder']),
+  source: z.enum(['activitywatch', 'folder', 'android']),
   kind: z.string().trim().min(1).max(40),
   ts: z.string().datetime({ offset: true }),
   durationSec: z.number().min(0).max(172_800).default(0),

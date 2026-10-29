@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Life Game</string>
+    <string name="tile_wake">I\'m up</string>
+    <string name="tile_timer">Timer</string>
+</resources>
