@@ -91,6 +91,12 @@ describe('privacy conversion', () => {
     expect(convertEvent(web, ev({ url: 'chrome://newtab' }), p)).toBeNull();
   });
 
+  it('strips invisible characters from app names', () => {
+    const p = { sendTitles: false, fullUrlDomains: [] };
+    expect(convertEvent(win, ev({ app: '\u200eWhatsApp' }), p)!.data).toEqual({ app: 'WhatsApp' });
+    expect(convertEvent(win, ev({ app: '\u200e\u200f' }), p)).toBeNull();
+  });
+
   it('skips zero-length, malformed and unknown events and keeps stable keys', () => {
     const p = { sendTitles: false, fullUrlDomains: [] };
     expect(convertEvent(win, ev({ app: 'Code' }, 0), p)).toBeNull();

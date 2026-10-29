@@ -61,7 +61,8 @@ export function convertEvent(bucket: AwBucket, e: AwEvent, privacy: Privacy): Ou
   const base = { source: 'activitywatch' as const, ts: new Date(e.timestamp).toISOString(), durationSec: Math.round(e.duration * 1000) / 1000, key };
 
   if (bucket.type === 'currentwindow') {
-    const app = typeof e.data.app === 'string' ? e.data.app.trim() : '';
+    // Some apps (WhatsApp, for one) put an invisible direction mark in their name; strip it so names match.
+    const app = typeof e.data.app === 'string' ? e.data.app.replace(/[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, '').trim() : '';
     if (!app) return null;
     const data: Record<string, unknown> = { app };
     if (privacy.sendTitles && typeof e.data.title === 'string') data.title = e.data.title.slice(0, 200);

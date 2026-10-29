@@ -18,15 +18,19 @@ let stopping = false;
 for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, () => { stopping = true; });
 
 let failures = 0;
-let lastMessage = '';
+let lastProblems = '';
+let lastLogged = 0;
 do {
   try {
     const r = await syncOnce(cfg, state);
     saveState(cfg.stateDir, state);
-    const msg = r.errors.length ? `sent ${r.sent}; problems: ${r.errors.join(' | ')}` : `sent ${r.sent} events from ${r.buckets} buckets`;
-    // Only log when something changed, so a quiet minute does not fill the log.
-    if (msg !== lastMessage || r.sent > 0) log(msg);
-    lastMessage = msg;
+    const problems = r.errors.join(' | ');
+    // Log when problems change, and otherwise at most every 15 minutes, so the log stays small.
+    if (problems !== lastProblems || Date.now() - lastLogged > 15 * 60_000) {
+      log(problems ? `sent ${r.sent}; problems: ${problems}` : `ok: sent ${r.sent} events from ${r.buckets} buckets`);
+      lastLogged = Date.now();
+    }
+    lastProblems = problems;
     failures = r.errors.length ? failures + 1 : 0;
   } catch (e) {
     if (e instanceof FatalError) {
