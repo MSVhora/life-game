@@ -30,8 +30,9 @@ services:
       # Your gitignored config/*.local.* files (the *.example.* ones are the fallback).
       - ./config:/app/config:ro
     ports:
-      # Loopback only: nginx on the host proxies to this. Change the left side if 3000 is taken.
-      - "127.0.0.1:${APP_PORT:-3000}:3000"
+      # Loopback only by default: nginx on the host proxies to this. For a trial from a phone on the same
+      # network set APP_BIND=0.0.0.0 in .env (and put it back to 127.0.0.1 when you deploy).
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
 
 volumes:
   pgdata:
