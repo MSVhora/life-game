@@ -24,6 +24,10 @@ const schema = z.object({
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_SUBJECT: z.string().default('mailto:admin@example.com'),
+  // Optional time tracker (Solidtime) for the freelance money meter.
+  TIMETRACKER_API_URL: z.string().optional(),
+  TIMETRACKER_API_TOKEN: z.string().optional(),
+  TIMETRACKER_ORG_ID: z.string().optional(),
 });
 
 export type Config = z.infer<typeof schema>;

@@ -1,15 +1,22 @@
-# Where the Mac sync agent looks for evidence. Copy to sources.local.yml and edit. Fake paths.
-folders:
+# What the Mac sync agent reads. Copy to sources.local.yml and edit. Fake paths.
+
+activitywatch:
+  url: http://localhost:5600     # the local ActivityWatch server
+  send_titles: false             # window and tab titles can be private, so they stay on your Mac unless you turn this on
+  full_url_domains:              # only these sites also send the full page address (public job boards, for example)
+    - example-jobs.com
+  backfill_days: 7               # how far back to send on the first run
+
+folders:                         # work folders to watch. The agent only looks at file times, never at contents.
   - id: work_folder
     path: "/Users/you/work-folder"
-    watch_git: true
+    watch_git: true              # also report commits (counts only, no messages)
   - id: prep_folder
     path: "/Users/you/work-folder/prep"
-csv:
+
+csv:                             # spreadsheets where one new row = one finished thing (rows are counted, not read)
   applications_csv: "/Users/you/work-folder/applications/applications.csv"
   targets_csv: "/Users/you/work-folder/targets/companies.csv"
-ignore:               # never read, sync or hash these
-  - ".env"
-  - "*.key"
-  - "*.pem"
-  - "id_*"
+
+ignore:                          # never looked at, on top of the built-in list (.env, keys, .git, node_modules)
+  - "*.secret"

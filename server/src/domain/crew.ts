@@ -16,6 +16,8 @@ export interface CrewInput {
   reputation: number;
   lastResolved: 'done' | 'missed' | 'paused' | null;
   paused: boolean;
+  /** Tracking-only baseline week: no tasks count and nothing is penalised. */
+  baseline?: boolean;
 }
 
 /** Fictional teammates. They react to your state; they are not real people and never message anyone. */
@@ -29,6 +31,11 @@ export function crewMessages(i: CrewInput): CrewMessage[] {
   const left = i.tasksRequired - i.requiredDone;
   const hoursLeft = i.msLeft / 3_600_000;
   const soft = i.pressure === 'data_only' || i.pressure === 'gentle';
+
+  if (i.baseline) {
+    say(0, 'Baseline week: just living your normal days while the app watches. Nothing counts, nothing is penalised.');
+    return out;
+  }
 
   if (i.paused) {
     say(0, 'Day off noted. Nothing counts against you today.');

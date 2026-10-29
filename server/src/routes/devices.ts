@@ -27,8 +27,10 @@ export async function deviceRoutes(app: FastifyInstance, opts: { pool: Pool }) {
 
   app.get('/api/devices', { preHandler: app.requireUser }, async () => {
     const { rows } = await pool.query(
-      `SELECT id, name, kind, created_at, last_seen_at, revoked_at
-         FROM devices ORDER BY created_at`,
+      `SELECT d.id, d.name, d.kind, d.created_at, d.last_seen_at, d.revoked_at,
+              (SELECT max(e.received_at) FROM events e WHERE e.device_id = d.id) AS last_event_at,
+              (SELECT count(*)::int FROM events e WHERE e.device_id = d.id) AS event_count
+         FROM devices d ORDER BY d.created_at`,
     );
     return { devices: rows };
   });

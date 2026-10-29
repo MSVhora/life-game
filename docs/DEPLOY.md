@@ -23,6 +23,9 @@ curl -s http://127.0.0.1:3000/health     # {"status":"ok","db":true}
 ```
 Migrations run automatically on start (`MIGRATE_ON_START=true`). The web app is served from the same address: open `https://life.<yourdomain>` on your phone, sign in, and use the browser menu to "Install app" / "Add to Home screen". A background job resolves each day at its deadline and sends the reminders.
 
+- Optional freelance meter: set `TIMETRACKER_API_URL` (the API base, e.g. `https://time.yourdomain.tld/api`) and `TIMETRACKER_API_TOKEN` (a personal API token from your Solidtime profile; keep it only in `.env`). `TIMETRACKER_ORG_ID` is looked up if left empty. Copy `config/clients.example.yml` to `config/clients.local.yml` with your clients, rates and monthly caps. It matches Solidtime projects or clients by the name in `timetracker_project`.
+- Mac tracking: see [AGENT.md](AGENT.md).
+
 ## 3. nginx and DNS
 1. You point `life.<yourdomain>` at the server (DNS is yours to manage).
 2. Copy `deploy/nginx.example.conf` to your nginx sites, change `server_name`, the certificate paths and the port, then get a certificate (e.g. `certbot --nginx -d life.<yourdomain>`).

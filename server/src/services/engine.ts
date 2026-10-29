@@ -18,6 +18,8 @@ import {
   localMinutesOfDay,
   minutesOfDay,
 } from '../domain/time.js';
+import { TIMER_CATEGORY, type TimerKind } from '../domain/timers.js';
+import { finishIfDue, getBaseline } from './baseline.js';
 import {
   getGoals,
   getSetting,
@@ -33,6 +35,8 @@ export interface EngineCtx {
   configDir: string;
   now: Date;
 }
+
+export { TIMER_KINDS, TIMER_CATEGORY, type TimerKind } from '../domain/timers.js';
 
 export class EngineError extends Error {
   constructor(
@@ -103,11 +107,13 @@ export async function ensureDay(ctx: EngineCtx): Promise<number> {
 
   return tx(pool, async (c) => {
     const paused = await c.query('SELECT 1 FROM pause_days WHERE local_date = $1', [cycle.localDate]);
+    const baseline = await getBaseline(ctx);
+    const inBaseline = !!baseline && baseline.status === 'active' && cycle.localDate >= baseline.startedOn && daysBetween(baseline.startedOn, cycle.localDate) < baseline.totalDays;
     const ins = await c.query<{ id: string }>(
       `INSERT INTO days (local_date, starts_at, ends_at, status, tasks_required)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (local_date) DO NOTHING RETURNING id`,
-      [cycle.localDate, cycle.startsAt, cycle.endsAt, paused.rowCount ? 'paused' : 'open', picks.length],
+      [cycle.localDate, cycle.startsAt, cycle.endsAt, paused.rowCount || inBaseline ? 'paused' : 'open', picks.length],
     );
     if (!ins.rows[0]) {
       const again = await c.query<{ id: string }>('SELECT id FROM days WHERE local_date = $1', [cycle.localDate]);
@@ -239,6 +245,7 @@ export async function resolveDueDays(ctx: EngineCtx): Promise<number> {
 
 /** One scheduler step: resolve finished days, then make sure the current one exists. */
 export async function tick(ctx: EngineCtx): Promise<{ dayId: number; resolved: number }> {
+  await finishIfDue(ctx);
   const resolved = await resolveDueDays(ctx);
   const dayId = await ensureDay(ctx);
   return { dayId, resolved };
@@ -264,14 +271,6 @@ export async function clearPause(ctx: EngineCtx, localDate: string): Promise<voi
   );
 }
 
-export const TIMER_KINDS = ['wash', 'bath', 'lunch', 'dinner', 'sleep', 'out', 'reading', 'gaming', 'work', 'other'] as const;
-export type TimerKind = (typeof TIMER_KINDS)[number];
-
-const CATEGORY: Record<TimerKind, string> = {
-  wash: 'Neutral', bath: 'Neutral', lunch: 'Neutral', dinner: 'Neutral', sleep: 'Neutral', out: 'Neutral', other: 'Neutral',
-  reading: 'Leisure', gaming: 'Gaming', work: 'Productive',
-};
-
 async function stopRunning(c: PoolClient, now: Date): Promise<{ kind: TimerKind; minutes: number } | null> {
   const { rows } = await c.query<{ id: string; kind: TimerKind; started_at: Date; label: string | null }>(
     `UPDATE timers SET stopped_at = GREATEST($1::timestamptz, started_at) WHERE stopped_at IS NULL
@@ -284,7 +283,7 @@ async function stopRunning(c: PoolClient, now: Date): Promise<{ kind: TimerKind;
   if (ms >= 1000) {
     await c.query(
       `INSERT INTO time_blocks (start_at, end_at, category, source, label) VALUES ($1, $2, $3, 'manual', $4)`,
-      [t.started_at, now, CATEGORY[t.kind], t.label ?? t.kind],
+      [t.started_at, now, TIMER_CATEGORY[t.kind], t.label ?? t.kind],
     );
   }
   return { kind: t.kind, minutes: Math.round(ms / 60000) };

@@ -165,3 +165,34 @@ nav.tabs .inner { display: flex; width: 100%; max-width: 640px; gap: 4px; }
 
 .mt10 { margin-top: 10px; }
 .mt12 { margin-top: 12px; }
+
+.hint { margin-top: 6px; font-size: 0.85rem; color: var(--success); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+pre.code { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px; overflow-x: auto; font-size: 0.78rem; white-space: pre-wrap; word-break: break-all; margin: 8px 0; color: var(--text); }
+.segmented { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--border); border-radius: 12px; padding: 4px; }
+.seg { border: 0; background: transparent; padding: 8px 4px; border-radius: 9px; font-weight: 600; color: var(--muted); cursor: pointer; min-height: 40px; }
+.seg[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+.seg:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+:root {
+  --cat-Productive: #16a34a; --cat-Neutral: #94a3b8; --cat-Waste: #dc2626; --cat-Gaming: #9333ea;
+  --cat-Leisure: #2563eb; --cat-Unlabeled: #d97706; --cat-Away: #cbd5e1;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --cat-Productive: #4ade80; --cat-Neutral: #94a3b8; --cat-Waste: #f87171; --cat-Gaming: #c084fc; --cat-Leisure: #60a5fa; --cat-Unlabeled: #fbbf24; --cat-Away: #475569; }
+}
+svg rect.c-Productive, .dot.c-Productive { fill: var(--cat-Productive); background: var(--cat-Productive); }
+svg rect.c-Neutral, .dot.c-Neutral { fill: var(--cat-Neutral); background: var(--cat-Neutral); }
+svg rect.c-Waste, .dot.c-Waste { fill: var(--cat-Waste); background: var(--cat-Waste); }
+svg rect.c-Gaming, .dot.c-Gaming { fill: var(--cat-Gaming); background: var(--cat-Gaming); }
+svg rect.c-Leisure, .dot.c-Leisure { fill: var(--cat-Leisure); background: var(--cat-Leisure); }
+svg rect.c-Unlabeled, .dot.c-Unlabeled { fill: var(--cat-Unlabeled); background: var(--cat-Unlabeled); }
+.dot.c-Away { background: var(--cat-Away); }
+.dot { width: 12px; height: 12px; border-radius: 4px; flex: none; display: inline-block; }
+svg { width: 100%; height: auto; display: block; }
+svg .axis { font-size: 9px; fill: var(--muted); }
+svg .baseline { stroke: var(--border); stroke-width: 1; }
+.legend { display: grid; gap: 6px; }
+.legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
+.chip.cat-Productive { background: var(--success-bg); color: var(--success); }
+.chip.cat-Waste { background: var(--danger-bg); color: var(--danger); }
+.chip.cat-Gaming, .chip.cat-Leisure { background: var(--border); color: var(--text); }
+.label-select { width: auto; min-width: 120px; min-height: 40px; padding: 4px 8px; }

@@ -2,7 +2,7 @@
 
 An open-source, deadline-driven productivity game for one player. A daily 24-hour window gives you a few small tasks and consequences. Sensors track your time, so you don't have to report it honestly. Game time is earned and capped.
 
-Status: **Phases 0 and 1 built** (server, game loop, web app). Phase 2 (automatic tracking) is next. License: MIT.
+Status: **Phases 0-2 built** (server, game loop, web app, Mac tracking, reports). Phase 3 (Android app) is next. License: MIT.
 
 ## Docs (read in this order)
 1. [docs/DECISIONS.md](docs/DECISIONS.md): settled choices
@@ -13,6 +13,7 @@ Status: **Phases 0 and 1 built** (server, game loop, web app). Phase 2 (automati
 6. [docs/CONFIGURATION.md](docs/CONFIGURATION.md): how personal data is kept out of the repo
 7. [docs/DOUBTS-AND-ISSUES.md](docs/DOUBTS-AND-ISSUES.md): open questions and risks
 8. [docs/DEPLOY.md](docs/DEPLOY.md): run it on your server
+9. [docs/AGENT.md](docs/AGENT.md): Mac tracking with ActivityWatch
 
 ## Your own data
 This repo ships formats and fake examples only (`config/*.example.*`, `.env.example`). Copy them to `*.local.*` / `.env` and fill in your values; those files and the `private/` folder are gitignored.

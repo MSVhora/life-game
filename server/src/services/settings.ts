@@ -32,11 +32,21 @@ export const settingsSchema = z.object({
 export type Settings = z.infer<typeof settingsSchema>;
 export const profilePatchSchema = settingsSchema.partial();
 
+export interface EvidenceRule {
+  type: string;
+  source?: string;
+  domains?: string[];
+  categories?: string[];
+  min_minutes?: number;
+  min_seconds?: number;
+}
+
 export interface QuestTemplate {
   id: string;
   title: string;
   minutes: number;
   xp: number;
+  evidence?: EvidenceRule[];
 }
 
 interface PlayerFile {
@@ -73,7 +83,7 @@ export function loadQuestTemplates(configDir: string): QuestTemplate[] {
   const f = loadConfigFile<{ templates?: Array<Partial<QuestTemplate>> }>(configDir, 'quests').data;
   return (f?.templates ?? [])
     .filter((t): t is QuestTemplate => !!t.id && !!t.title)
-    .map((t) => ({ id: t.id, title: t.title, minutes: t.minutes ?? 15, xp: t.xp ?? 20 }));
+    .map((t) => ({ id: t.id, title: t.title, minutes: t.minutes ?? 15, xp: t.xp ?? 20, evidence: t.evidence }));
 }
 
 export async function getSetting<T>(pool: Pool, key: string): Promise<T | undefined> {

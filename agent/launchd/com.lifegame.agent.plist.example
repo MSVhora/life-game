@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Copy to ~/Library/LaunchAgents/com.lifegame.agent.plist, replace the YOU/paths, then:
+    launchctl load ~/Library/LaunchAgents/com.lifegame.agent.plist
+  The device token is NOT in this file: it is read from ~/.life-game-agent/token (chmod 600).
+  Find your node path with:  which node
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.lifegame.agent</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>/Users/YOU/life-game/agent/dist/index.js</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>LIFE_GAME_URL</key><string>https://life.example.com</string>
+    <key>LIFE_GAME_CONFIG_DIR</key><string>/Users/YOU/life-game/config</string>
+    <key>PATH</key><string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <!-- Restart after crashes, but not when the agent stopped on purpose (for example a refused token). -->
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
+  <key>ThrottleInterval</key><integer>60</integer>
+  <key>StandardOutPath</key><string>/Users/YOU/.life-game-agent/agent.log</string>
+  <key>StandardErrorPath</key><string>/Users/YOU/.life-game-agent/agent.log</string>
+</dict>
+</plist>

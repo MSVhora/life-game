@@ -27,6 +27,13 @@ const state = {
   history: null,
   pauses: null,
   preview: null,
+  range: 'today',
+  report: null,
+  freelance: null,
+  baseline: null,
+  devices: null,
+  newToken: null,
+  recent: null,
   toast: null,
   error: null,
   offset: 0, // server time minus device time, ms
@@ -95,7 +102,11 @@ async function refresh({ quiet = false } = {}) {
   if (!quiet) render();
 }
 async function loadProfile() { state.profile = (await api('GET', '/api/profile')).settings; }
-async function loadHistory() { state.history = (await api('GET', '/api/history?days=30')).days; }
+async function loadHistory() { state.recent = (await api('GET', '/api/history?days=14')).days; }
+async function loadReport() { state.report = await api('GET', `/api/reports?range=${state.range}`); }
+async function loadFreelance() { state.freelance = await api('GET', '/api/freelance'); }
+async function loadBaseline() { state.baseline = await api('GET', '/api/baseline'); }
+async function loadDevices() { state.devices = (await api('GET', '/api/devices')).devices; }
 async function loadPauses() { state.pauses = (await api('GET', '/api/pause')).pauses; }
 
 /* ---------- views ---------- */
@@ -120,11 +131,13 @@ function todayView() {
     <button class="check" data-action="${t.status === 'done' ? 'undo' : 'complete'}" data-id="${t.id}"
       aria-pressed="${t.status === 'done'}" aria-label="${t.status === 'done' ? 'Undo' : 'Mark done'}: ${t.title}" ${paused ? 'disabled' : ''}>${raw(t.status === 'done' ? icons.check : '')}</button>
     <div class="grow"><div class="title">${t.title}</div>
-      <div class="meta">${[t.plannedMinutes ? `${t.plannedMinutes} min` : null, `+${t.xp} XP`, t.rewardMinutes ? `+${t.rewardMinutes} min play` : null, t.required ? null : 'optional'].filter(Boolean).join(' · ')}</div></div>
+      <div class="meta">${[t.plannedMinutes ? `${t.plannedMinutes} min` : null, `+${t.xp} XP`, t.rewardMinutes ? `+${t.rewardMinutes} min play` : null, t.required ? null : 'optional'].filter(Boolean).join(' · ')}</div>
+      ${t.status !== 'done' && t.markers?.length && !paused ? html`<div class="hint">Activity found: ${t.markers.map((m) => m.ref).join(', ')} <button class="btn small" data-action="complete" data-id="${t.id}">Mark done</button></div>` : ''}</div>
   </div>`;
   return html`<main class="page stack">
     ${!d.onboarded ? html`<div class="notice">First time here? <button class="btn small" data-action="goto" data-view="plan">Set up your profile and goal</button></div>` : ''}
-    ${paused ? html`<div class="notice">Day off. Nothing counts against you today. <button class="btn small" data-action="resume-day">Resume</button></div>` : ''}
+    ${d.baseline?.active ? html`<div class="notice">Baseline week, day ${d.baseline.dayNumber} of ${d.baseline.totalDays}. Everything is tracked, nothing counts. <button class="btn small" data-action="baseline-end" data-skip="true">End early</button></div>`
+      : paused ? html`<div class="notice">Day off. Nothing counts against you today. <button class="btn small" data-action="resume-day">Resume</button></div>` : ''}
     <section class="card hero">
       <div class="label">${d.day.success ? 'Required tasks done' : 'Day ends in'}</div>
       <div class="countdown ${msLeft < 1800000 ? 'critical' : msLeft < 7200000 ? 'low' : ''}" data-countdown="${d.day.endsAt}">${hms(msLeft)}</div>
@@ -258,20 +271,156 @@ function planView() {
   </main>`;
 }
 
-function historyView() {
-  const h = state.history;
-  return html`<main class="page stack"><section class="card"><h2>Last 30 days</h2>
-    ${!h ? html`<p class="muted">Loading…</p>` : h.length ? h.map((x) => html`<div class="list-row"><div><div class="title">${dayDate(x.localDate)}</div>
-      <div class="meta">${x.requiredDone}/${x.tasksRequired} tasks${x.wokeAt ? ` · up ${clock(x.wokeAt)}` : ''}${x.earnedMinutes ? ` · ${x.earnedMinutes} min earned` : ''}</div></div>
-      <span class="chip ${x.status}">${x.status === 'open' ? 'today' : x.status}</span></div>`) : html`<p class="muted">Nothing yet. Your first day will show up here.</p>`}
-  </section><p class="muted small">Week, month and 6-month views come with the tracking phase.</p></main>`;
+const CATS = ['Productive', 'Neutral', 'Waste', 'Gaming', 'Leisure', 'Unlabeled'];
+const CAT_NAME = { Productive: 'Productive', Neutral: 'Neutral', Waste: 'Waste', Gaming: 'Gaming', Leisure: 'Leisure', Unlabeled: 'Not labelled yet', Away: 'Away from computer' };
+const LABELS = ['Productive', 'Neutral', 'Waste', 'Gaming', 'Leisure'];
+const RANGES = { today: 'Today', week: 'Week', month: 'Month', '6months': '6 months' };
+
+function dur(sec) {
+  const m = Math.round(sec / 60);
+  if (m < 60) return `${m} min`;
+  return `${Math.floor(m / 60)} h ${pad(m % 60)} min`;
+}
+const hhmm = (min) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+const money = (n, cur) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: cur || 'INR', maximumFractionDigits: 0 }).format(n);
+
+function axisLabel(date, i, series, range) {
+  const d = new Date(`${date}T00:00:00Z`);
+  if (range === 'week') return new Intl.DateTimeFormat('en-GB', { weekday: 'narrow', timeZone: 'UTC' }).format(d);
+  if (range === 'month') return d.getUTCDate() % 5 === 0 || i === 0 ? String(d.getUTCDate()) : '';
+  const prev = i > 0 ? new Date(`${series[i - 1].date}T00:00:00Z`) : null;
+  return !prev || prev.getUTCMonth() !== d.getUTCMonth() ? new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' }).format(d) : '';
+}
+
+function chart(series, range) {
+  const W = 320, H = 150, labelH = 16, pad2 = 4;
+  const sum = (t) => CATS.reduce((a, c) => a + (t[c] || 0), 0);
+  const max = Math.max(1, ...series.map((x) => sum(x.totals)));
+  const bw = (W - pad2 * 2) / series.length;
+  const gap = Math.min(4, bw * 0.25);
+  const base = H - labelH;
+  const bars = series.map((x, i) => {
+    let y = base;
+    const rects = CATS.map((c) => {
+      const h = ((x.totals[c] || 0) / max) * (base - pad2);
+      if (h < 0.5) return '';
+      y -= h;
+      return `<rect class="c-${c}" x="${(pad2 + i * bw + gap / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(1, bw - gap).toFixed(1)}" height="${h.toFixed(1)}"/>`;
+    }).join('');
+    const label = axisLabel(x.date, i, series, range);
+    return `<g>${rects}${label ? `<text class="axis" x="${(pad2 + i * bw + bw / 2).toFixed(1)}" y="${H - 3}" text-anchor="middle">${esc(label)}</text>` : ''}</g>`;
+  }).join('');
+  const total = series.reduce((a, x) => a + sum(x.totals), 0);
+  return raw(`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Time per ${range === '6months' ? 'week' : 'day'}, ${dur(total)} in total"><line class="baseline" x1="0" y1="${base}" x2="${W}" y2="${base}"/>${bars}</svg>`);
+}
+
+function dayBar(totals) {
+  const sum = CATS.reduce((a, c) => a + (totals[c] || 0), 0);
+  if (!sum) return raw('');
+  let x = 0;
+  const rects = CATS.map((c) => {
+    const w = ((totals[c] || 0) / sum) * 320;
+    const r = w > 0.3 ? `<rect class="c-${c}" x="${x.toFixed(1)}" y="0" width="${w.toFixed(1)}" height="22" rx="3"/>` : '';
+    x += w;
+    return r;
+  }).join('');
+  return raw(`<svg viewBox="0 0 320 22" role="img" aria-label="Split of tracked time">${rects}</svg>`);
+}
+
+function labelSelect(kind, value, current) {
+  return html`<select class="label-select" data-change="label" data-kind="${kind}" data-value="${value}" aria-label="Label ${value}">
+    ${current ? '' : html`<option value="" selected>Choose…</option>`}${LABELS.map((l) => html`<option value="${l}" ${l === current ? 'selected' : ''}>${l}</option>`)}</select>`;
+}
+
+function insightsView() {
+  const r = state.report;
+  const fl = state.freelance;
+  const bl = state.baseline;
+  const tabs = html`<div class="segmented" role="tablist" aria-label="Time range">${Object.entries(RANGES).map(([k, v]) => html`<button role="tab" class="seg" data-action="range" data-range="${k}" aria-selected="${state.range === k}">${v}</button>`)}</div>`;
+  if (!r) return html`<main class="page stack">${tabs}<p class="muted">Loading…</p></main>`;
+  const tracked = CATS.reduce((a, c) => a + (r.totals[c] || 0), 0);
+  const empty = r.daysWithData === 0;
+  const med = r.wake.length ? (() => { const v = r.wake.map((w) => w.wokeAt).map((iso) => { const [h, m] = clock(iso).split(':').map(Number); return h * 60 + m; }).sort((a, b) => a - b); return v[Math.floor(v.length / 2)]; })() : null;
+  return html`<main class="page stack">
+    ${tabs}
+    ${empty ? html`<section class="card"><h2>No tracked time yet</h2><p class="muted">Connect your Mac in More and the app starts showing where your time goes. Timers you start by hand also appear here.</p></section>` : ''}
+    <section class="card stack" aria-labelledby="ov-h"><h2 id="ov-h">${RANGES[state.range]}</h2>
+      <div class="stats">
+        <div class="stat"><div class="num">${r.productivePct === null ? '–' : `${r.productivePct}%`}</div><div class="label">Productive</div></div>
+        <div class="stat"><div class="num">${dur(tracked)}</div><div class="label">Tracked</div></div>
+        <div class="stat"><div class="num">${r.longestFocusMin ? dur(r.longestFocusMin * 60) : '–'}</div><div class="label">Longest focus</div></div>
+      </div>
+      ${state.range === 'today' ? dayBar(r.totals) : chart(r.series, state.range)}
+      <div class="legend">${[...CATS, 'Away'].filter((c) => r.totals[c] > 0).map((c) => html`<div class="legend-row"><span class="dot c-${c}"></span><span class="grow">${CAT_NAME[c]}</span><span>${dur(r.totals[c])}</span></div>`)}</div>
+      <p class="muted small">Productive % counts productive time against waste, gaming and leisure. Neutral time and time away from the computer are left out.</p>
+    </section>
+    ${r.unlabeled.length ? html`<section class="card"><h2>Label these</h2><p class="muted small">Tell the app what each one is, and every past day is re-sorted.</p>
+      ${r.unlabeled.map((i) => html`<div class="list-row"><div class="grow"><div class="title">${i.key}</div><div class="meta">${i.kind === 'domain' ? 'site' : 'app'} · ${dur(i.seconds)}</div></div>${labelSelect(i.kind, i.key, '')}</div>`)}</section>` : ''}
+    ${r.topItems.length ? html`<section class="card"><h2>Where the time went</h2>
+      ${r.topItems.slice(0, 10).map((i) => html`<div class="list-row"><div class="grow"><div class="title">${i.key}</div><div class="meta"><span class="chip cat-${i.category}">${i.category}</span> ${dur(i.seconds)}</div></div>${i.kind === 'manual' ? '' : labelSelect(i.kind, i.key, i.category)}</div>`)}</section>` : ''}
+    ${fl && (fl.configured || fl.clients.length) ? html`<section class="card stack"><div class="row between"><h2>Freelance, ${fl.month}</h2>${fl.configured ? html`<button class="btn small" data-action="sync-freelance">Sync now</button>` : ''}</div>
+      ${!fl.configured ? html`<p class="muted small">Not connected to your time tracker. Set TIMETRACKER_API_URL and TIMETRACKER_API_TOKEN in .env to see hours and money here.</p>` : ''}
+      ${fl.clients.map((c) => html`<div><div class="row between"><strong>${c.name}</strong><span class="small">${c.hours} h of ${c.capHours} h</span></div>
+        <progress class="good" max="${Math.max(1, c.cap)}" value="${Math.min(c.earned, c.cap)}" aria-label="${c.name} earned of cap"></progress>
+        <div class="meta">${money(c.earned, fl.currency)} of ${money(c.cap, fl.currency)} · ${c.remainingHours} h left this month</div></div>`)}
+      ${fl.clients.length ? html`<div class="row between"><strong>Total</strong><span>${fl.totals.hours} h · ${money(fl.totals.earned, fl.currency)}</span></div>` : ''}
+      ${fl.unmatched.length ? html`<p class="muted small">Not matched to a client in your config: ${fl.unmatched.map((u) => `${u.name} (${u.hours} h)`).join(', ')}</p>` : ''}
+    </section>` : ''}
+    ${bl?.summary ? html`<section class="card stack"><h2>Your baseline${bl.baseline?.active ? ` (day ${bl.baseline.dayNumber} of ${bl.baseline.totalDays})` : ''}</h2>
+      <div class="stats">
+        <div class="stat"><div class="num">${bl.summary.wake.medianMinutes === null ? '–' : hhmm(bl.summary.wake.medianMinutes)}</div><div class="label">Typical wake</div></div>
+        <div class="stat"><div class="num">${bl.summary.productivePct === null ? '–' : `${bl.summary.productivePct}%`}</div><div class="label">Productive</div></div>
+        <div class="stat"><div class="num">${bl.summary.longestFocusMedianMin ? `${bl.summary.longestFocusMedianMin} min` : '–'}</div><div class="label">Usual focus</div></div>
+      </div>
+      <p class="small">${bl.summary.wake.spreadMinutes !== null ? `Your wake time varies by ${dur(bl.summary.wake.spreadMinutes * 60)} across ${bl.summary.wake.loggedDays} logged days. ` : 'Log "I\'m up" each day to see your wake pattern. '}${bl.summary.gamingStartMedianMinutes !== null ? `You usually start gaming around ${hhmm(bl.summary.gamingStartMedianMinutes)}. ` : ''}${bl.summary.suggestedTaskMinutes ? `Tasks of about ${bl.summary.suggestedTaskMinutes} minutes should fit your focus span.` : ''}</p>
+    </section>` : ''}
+    <section class="card"><h2>Habits</h2>
+      <div class="list-row"><span>Typical wake-up</span><strong>${med === null ? 'not logged' : hhmm(med)}</strong></div>
+      <div class="list-row"><span>Days won / missed / paused</span><strong>${r.tasks.won} / ${r.tasks.missed} / ${r.tasks.paused}</strong></div>
+      <div class="list-row"><span>Tasks completed</span><strong>${r.tasks.completed}</strong></div>
+    </section>
+    <section class="card"><h2>Recent days</h2>
+      ${!state.recent ? html`<p class="muted">Loading…</p>` : state.recent.length ? state.recent.map((x) => html`<div class="list-row"><div><div class="title">${dayDate(x.localDate)}</div>
+        <div class="meta">${x.requiredDone}/${x.tasksRequired} tasks${x.wokeAt ? ` · up ${clock(x.wokeAt)}` : ''}${x.earnedMinutes ? ` · ${x.earnedMinutes} min earned` : ''}</div></div>
+        <span class="chip ${x.status}">${x.status === 'open' ? 'today' : x.status}</span></div>`) : html`<p class="muted">Your first day will show up here.</p>`}
+    </section>
+  </main>`;
+}
+
+function ago(iso) {
+  if (!iso) return 'never';
+  const m = Math.round((nowMs() - Date.parse(iso)) / 60000);
+  if (m < 2) return 'just now';
+  if (m < 90) return `${m} min ago`;
+  if (m < 2880) return `${Math.round(m / 60)} h ago`;
+  return `${Math.round(m / 1440)} days ago`;
 }
 
 function moreView() {
   const d = state.data;
-  const paused = d?.day.status === 'paused';
+  const paused = d?.day.status === 'paused' && !d?.baseline?.active;
   const notif = 'Notification' in window ? Notification.permission : 'unsupported';
+  const bl = state.baseline?.baseline;
+  const origin = location.origin;
   return html`<main class="page stack">
+    <section class="card stack"><h2>Connect a device</h2>
+      <p class="muted small">The Mac agent sends what you do on the computer (apps, sites, work-folder activity) so you do not have to log it.</p>
+      ${state.newToken ? html`<div class="notice ok" role="status"><p><strong>Token for ${state.newToken.name}.</strong> Shown once. Run this on that Mac:</p>
+        <pre class="code">mkdir -p ~/.life-game-agent &amp;&amp; printf '%s' '${state.newToken.token}' &gt; ~/.life-game-agent/token &amp;&amp; chmod 600 ~/.life-game-agent/token
+export LIFE_GAME_URL=${origin}</pre>
+        <p class="small">Then follow docs/AGENT.md to start the agent.</p>
+        <button class="btn small" data-action="copy-token">Copy token</button> <button class="btn small" data-action="token-done">I saved it</button></div>` : ''}
+      ${(state.devices || []).filter((x) => !x.revoked_at).map((x) => html`<div class="list-row"><div class="grow"><div class="title">${x.name}</div><div class="meta">${x.kind} · last data ${ago(x.last_event_at)} · ${x.event_count} events</div></div><button class="btn small danger" data-action="device-revoke" data-id="${x.id}">Revoke</button></div>`)}
+      <form class="row" data-form="device"><input name="name" placeholder="Name, e.g. My Mac" maxlength="80" required aria-label="Device name"><button class="btn small primary" type="submit">Connect a Mac</button></form>
+    </section>
+
+    <section class="card stack"><h2>Baseline week</h2>
+      <p class="muted small">Seven days of just tracking: no tasks count and nothing is penalised. You get a picture of how your days really go, then the game is tuned to it.</p>
+      ${bl?.active ? html`<p>Day ${bl.dayNumber} of ${bl.totalDays}, ends ${dayDate(bl.endsOn)}.</p><button class="btn" data-action="baseline-end" data-skip="true">End the baseline now</button>`
+        : bl ? html`<p>Baseline ${bl.status === 'done' ? 'finished' : 'skipped'}. See the results under Insights.</p><button class="btn" data-action="baseline-start">Run it again</button>`
+        : html`<button class="btn primary" data-action="baseline-start">Start a baseline week</button>`}
+    </section>
+
     <section class="card stack"><h2>Take a day off</h2>
       <p class="muted small">Family, travel, a festival, illness. Nothing counts against you and your streak is kept.</p>
       ${paused ? html`<button class="btn" data-action="resume-day">Resume today</button>` : html`<form class="stack" data-form="pause">
@@ -290,7 +439,7 @@ function moreView() {
 }
 
 function navView() {
-  const tabs = [['today', 'Today', icons.today], ['timers', 'Timers', icons.timers], ['plan', 'Plan', icons.plan], ['history', 'History', icons.history], ['more', 'More', icons.more]];
+  const tabs = [['today', 'Today', icons.today], ['timers', 'Timers', icons.timers], ['insights', 'Insights', icons.history], ['plan', 'Plan', icons.plan], ['more', 'More', icons.more]];
   return html`<nav class="tabs" aria-label="Main"><div class="inner">${tabs.map(([id, label, icon]) => html`<button class="tab" data-action="goto" data-view="${id}" ${state.view === id ? raw('aria-current="page"') : ''}>${raw(icon)}<span>${label}</span></button>`)}</div></nav>`;
 }
 
@@ -300,7 +449,7 @@ function render() {
   if (typing && !state.toast && state.authed) return; // don't clobber a form being edited
   if (state.authed === null) { root.innerHTML = ''; return; }
   if (!state.authed) { root.innerHTML = loginView(); return; }
-  const views = { today: todayView, timers: timersView, plan: planView, history: historyView, more: moreView };
+  const views = { today: todayView, timers: timersView, insights: insightsView, plan: planView, more: moreView };
   const scrollY = window.scrollY;
   root.innerHTML = views[state.view]() + navView() + (state.toast ? html`<div class="toast" role="status">${state.toast}</div>` : '');
   window.scrollTo(0, scrollY);
@@ -342,8 +491,8 @@ const actions = {
     state.preview = null;
     render();
     if (state.view === 'plan') await run(async () => { await loadProfile(); render(); });
-    if (state.view === 'history') await run(async () => { await loadHistory(); render(); });
-    if (state.view === 'more') await run(async () => { await loadPauses(); render(); });
+    if (state.view === 'insights') await run(async () => { await Promise.all([loadReport(), loadFreelance(), loadBaseline(), loadHistory()]); render(); });
+    if (state.view === 'more') await run(async () => { await Promise.all([loadPauses(), loadDevices(), loadBaseline()]); render(); });
     window.scrollTo(0, 0);
   },
   complete: (el) => run(async () => { await api('POST', `/api/tasks/${el.dataset.id}/complete`); await refresh(); }),
@@ -375,6 +524,22 @@ const actions = {
     await api('DELETE', `/api/goals/${el.dataset.id}`);
     await refresh();
   }),
+  range: (el) => run(async () => { state.range = el.dataset.range; state.report = null; render(); await loadReport(); render(); }),
+  'sync-freelance': () => run(async () => { state.freelance = await api('POST', '/api/freelance/sync'); toast('Synced with your time tracker.'); }),
+  'baseline-start': () => run(async () => { await api('POST', '/api/baseline/start'); await Promise.all([loadBaseline(), refresh()]); toast('Baseline week started. Just live normally.'); }),
+  'baseline-end': (el) => run(async () => {
+    if (!confirm('End the baseline week now? Tasks start counting again.')) return;
+    await api('POST', '/api/baseline/end', { skip: el.dataset.skip === 'true' });
+    await Promise.all([loadBaseline(), refresh()]);
+  }),
+  'device-revoke': (el) => run(async () => {
+    if (!confirm('Revoke this device? It stops sending data immediately.')) return;
+    await api('DELETE', `/api/devices/${el.dataset.id}`);
+    await loadDevices();
+    render();
+  }),
+  'copy-token': () => run(async () => { await navigator.clipboard.writeText(state.newToken.token); toast('Token copied.'); }),
+  'token-done': () => { state.newToken = null; render(); },
   'push-enable': () => run(enablePush),
   'push-test': () => run(async () => {
     const r = await api('POST', '/api/push/test');
@@ -417,9 +582,29 @@ document.addEventListener('submit', (e) => {
       await refresh();
       toast(r.appliesFrom === 'today' ? 'Goal saved. Today\'s tasks now come from it.' : 'Goal saved. You already started today, so it shapes tomorrow\'s tasks.');
     });
+  } else if (kind === 'device') {
+    run(async () => {
+      const r = await api('POST', '/api/devices', { name: f.name, kind: 'mac' });
+      state.newToken = { name: r.name, token: r.token };
+      await loadDevices();
+      render();
+    });
   } else if (kind === 'pause') {
     run(async () => { await api('POST', '/api/pause', { reason: f.reason, note: f.note || null }); await loadPauses(); toast('Day off recorded.'); await refresh(); });
   }
+});
+
+document.addEventListener('change', (e) => {
+  const el = e.target.closest('[data-change="label"]');
+  if (!el || !el.value) return;
+  const { kind, value } = el.dataset;
+  const category = el.value;
+  el.blur();
+  run(async () => {
+    await api('POST', '/api/labels', { kind, value, category });
+    await Promise.all([loadReport(), loadBaseline()]);
+    toast(`${value} is now ${category}.`);
+  });
 });
 
 /* ---------- notifications ---------- */

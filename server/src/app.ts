@@ -9,7 +9,9 @@ import { authRoutes } from './routes/auth.js';
 import { deviceRoutes } from './routes/devices.js';
 import { gameRoutes } from './routes/game.js';
 import { pushRoutes } from './routes/push.js';
+import { trackRoutes } from './routes/track.js';
 import { createWebPushSender, type PushSender } from './services/push.js';
+import { timeTrackerConfig } from './services/timetracker.js';
 import { healthRoutes } from './routes/health.js';
 import { defaultConfigDir } from './services/settings.js';
 
@@ -22,11 +24,13 @@ export interface AppDeps {
   clock?: () => Date;
   /** Overrides the real web-push sender (tests). */
   pushSender?: PushSender;
+  /** Overrides fetch for the time tracker API (tests). */
+  timeTrackerFetch?: typeof fetch;
 }
 
 export const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public');
 
-export async function buildApp({ config, pool, configDir = defaultConfigDir(), clock = () => new Date(), pushSender }: AppDeps): Promise<FastifyInstance> {
+export async function buildApp({ config, pool, configDir = defaultConfigDir(), clock = () => new Date(), pushSender, timeTrackerFetch }: AppDeps): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { level: config.LOG_LEVEL, redact: ['req.headers.authorization', 'req.headers.cookie'] },
     trustProxy: true, // runs behind nginx; needed for the real client IP
@@ -48,6 +52,7 @@ export async function buildApp({ config, pool, configDir = defaultConfigDir(), c
   await app.register(authRoutes, { config });
   await app.register(deviceRoutes, { pool });
   await app.register(gameRoutes, { pool, configDir, clock });
+  await app.register(trackRoutes, { pool, configDir, clock, timeTracker: timeTrackerConfig(config), fetcher: timeTrackerFetch });
 
   const vapid = config.VAPID_PUBLIC_KEY && config.VAPID_PRIVATE_KEY
     ? { publicKey: config.VAPID_PUBLIC_KEY, privateKey: config.VAPID_PRIVATE_KEY, subject: config.VAPID_SUBJECT }

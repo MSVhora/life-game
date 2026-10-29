@@ -7,10 +7,13 @@ import {
   rankForLevel,
 } from '../domain/game.js';
 import { daysBetween, cycleFor, localDateString } from '../domain/time.js';
+import { describeBaseline, getBaseline } from './baseline.js';
 import { getRamp, resolvedDays, tick, type EngineCtx } from './engine.js';
+import { markersByTask } from './markers.js';
 import { getGoals, getSetting, rampStartDate } from './settings.js';
 
 interface TaskOut {
+  markers?: Array<{ type: string; ref: string }>;
   id: number;
   title: string;
   plannedMinutes: number | null;
@@ -45,6 +48,8 @@ export async function buildState(ctx: EngineCtx) {
     id: Number(t.id), title: t.title, plannedMinutes: t.planned_minutes, xp: t.xp,
     rewardMinutes: t.reward_minutes, required: t.required, status: t.status, templateId: t.template_id,
   }));
+  const markers = await markersByTask(pool, tasks.map((t) => t.id));
+  for (const t of tasks) t.markers = markers.get(t.id) ?? [];
   const requiredDone = tasks.filter((t) => t.required && t.status === 'done').length;
 
   const budgetRes = await pool.query<{ cap_minutes: number; earned_minutes: number }>(
@@ -107,18 +112,22 @@ export async function buildState(ctx: EngineCtx) {
   }
 
   const msLeft = Math.max(0, day.ends_at.getTime() - now.getTime());
+  const baseline = describeBaseline(await getBaseline(ctx), cycle.localDate);
+  const inBaseline = !!baseline?.active;
   const paused = day.status === 'paused';
   const crew = crewMessages({
     pressure: settings.pressure,
     seed: daysBetween('2026-01-01', cycle.localDate),
     msLeft, tasksRequired: day.tasks_required, requiredDone, streak, reputation,
     lastResolved: lastResolved === 'done' || lastResolved === 'missed' || lastResolved === 'paused' ? lastResolved : null,
-    paused,
+    paused: paused && !inBaseline,
+    baseline: inBaseline,
   });
   const ramp = await getRamp(pool, settings);
 
   return {
     now: now.toISOString(),
+    baseline,
     onboarded: (await getSetting(pool, 'profile')) !== undefined || goals.length > 0,
     day: {
       id: Number(day.id), localDate: cycle.localDate, status: day.status,

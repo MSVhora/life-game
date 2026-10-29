@@ -45,13 +45,15 @@ Suggested order: Phase 0 and 1 first (a usable game in days), then 2 (Mac), 3 (A
 | P1-13 | Reward rule `min(60, cap / tasks_required)` and task ramp (add a task after 5 of 7 days met) | Reward shrinks as tasks grow; ramp respects max 1 new task/week | P1-3 | S |
 | P1-9 | Seed your tasks, wake goal, budget numbers in the gitignored config files | Config reviewed by you | P1-2 | S |
 
-## Phase 2: Mac automation
+## Phase 2: Mac automation  (status: built, needs your Mac to verify)
 **Goal:** Mac time and work-folder work are tracked with no input from you.
 **Done when:** a day of Mac use shows as correctly tagged blocks, and a new CSV row marks a task done.
 
+**Status (2026-10-29):** P2-2 to P2-11 are implemented: ingest API, sync agent, rules and labels, timeline and daily stats, today/week/month/6-month reports, activity markers, work-folder and git watcher, Solidtime money meter, baseline week, and the Insights and device screens. 127 server tests and 20 agent tests pass, and the real agent was run against the real server with a stand-in ActivityWatch. **Not yet verified:** a real ActivityWatch install, the browser extension, launchd, and a live Solidtime server (its API was read from its source code and tested against a stand-in). See [AGENT.md](AGENT.md).
+
 | ID | Task | Acceptance criteria | Depends | Size |
 |---|---|---|---|---|
-| P2-1 | Install and configure ActivityWatch + browser extension | Window and URL events visible locally | - | S |
+| P2-1 | Install and configure ActivityWatch + browser extension (you do this, see AGENT.md) | Window and URL events visible locally | - | S |
 | P2-2 | Ingest API (batch, idempotent, checkpoints) | Re-sending a batch creates no duplicates | P0-3, P0-6 | M |
 | P2-3 | Mac sync agent (launchd, reads `:5600`, offline catch-up) | After 10 min offline, events appear on reconnect | P2-2 | L |
 | P2-4 | Rules engine + `categories.json` (app/site to Productive/Neutral/Waste) | Rule edits apply to past and new events | P2-2 | M |
